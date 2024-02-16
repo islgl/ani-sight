@@ -97,4 +97,89 @@ public class UserController {
         return CustomResponseFactory.success("Executed successfully", userService.getUserField(user, field));
     }
 
+    @PostMapping
+    public CustomResponse createUser(User user) {
+        try {
+            userService.saveUser(user);
+            return CustomResponseFactory.success("Successfully created user",
+                    userService.user2Map(user));
+        } catch (Exception e) {
+            return CustomResponseFactory.error("Failed to create user");
+        }
+    }
+
+    @PutMapping("/{id}")
+    public CustomResponse updateUser(@PathVariable int id,
+                                     @RequestParam Map<String, String> userInfo) {
+        User user = userService.getUserById(id);
+
+        if (user == null) {
+            return CustomResponseFactory.error("No user found");
+        } else {
+            if (userInfo.containsKey("username")) {
+                user.setUsername(userInfo.get("username"));
+            }
+            if (userInfo.containsKey("password")) {
+                user.setPassword(userInfo.get("password"));
+            }
+            if (userInfo.containsKey("email")) {
+                user.setEmail(userInfo.get("email"));
+            }
+            if (userInfo.containsKey("role")) {
+                user.setRole(Integer.parseInt(userInfo.get("role")));
+            }
+            if (userInfo.containsKey("avatar")) {
+                user.setAvatar(userInfo.get("avatar"));
+            }
+            userService.updateUser(user);
+            return CustomResponseFactory.success("Successfully updated user",
+                    userService.user2Map(user));
+        }
+    }
+
+    @PutMapping("/{id}/{field}")
+    public CustomResponse updateUserField(@PathVariable int id, @PathVariable String field, @RequestBody String value) {
+        User user = userService.getUserById(id);
+
+        if (user == null) {
+            return CustomResponseFactory.error("No user found");
+        } else {
+            switch (field) {
+                case "username":
+                    user.setUsername(value);
+                    break;
+                case "password":
+                    user.setPassword(value);
+                    break;
+                case "email":
+                    user.setEmail(value);
+                    break;
+                case "role":
+                    user.setRole(Integer.parseInt(value));
+                    break;
+                case "avatar":
+                    user.setAvatar(value);
+                    break;
+                default:
+                    return CustomResponseFactory.error("Invalid field");
+            }
+            System.out.println(user);
+            userService.updateUser(user);
+            return CustomResponseFactory.success("Successfully updated user",
+                    userService.user2Map(user));
+        }
+    }
+
+    @DeleteMapping
+    public CustomResponse deleteUsers() {
+        userService.deleteUsers();
+        return CustomResponseFactory.success("Successfully deleted all users");
+    }
+
+    @DeleteMapping("/{id}")
+    public CustomResponse deleteUser(@PathVariable int id) {
+        userService.deleteUser(id);
+        return CustomResponseFactory.success("Successfully deleted user id = " + id);
+    }
+
 }

@@ -32,4 +32,12 @@ public class User {
         this.email = email;
         this.avatar = avatar;
     }
+
+    public User(String username, String password, String email) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.role = 0;
+        this.avatar = "default.svg";
+    }
 }

@@ -51,9 +51,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
+
     // Delete
     public void deleteUser(int id) {
         userRepository.deleteById(id);
+    }
+
+    public void deleteUsers() {
+        userRepository.deleteAll();
     }
 
     public Map<String, Object> user2Map(User user, List<String> fields) {
@@ -70,7 +75,7 @@ public class UserService {
                     filteredUser.put("email", user.getEmail());
                     break;
                 case "role":
-                    filteredUser.put("role", user.getRole());
+                    filteredUser.put("role", user.getRole() == 0 ? "User" : "Administrator");
                     break;
                 case "avatar":
                     filteredUser.put("avatar", user.getAvatar());
@@ -87,7 +92,7 @@ public class UserService {
                 "id", user.getId(),
                 "username", user.getUsername(),
                 "email", user.getEmail(),
-                "role", user.getRole(),
+                "role", user.getRole() == 0 ? "User" : "Administrator",
                 "avatar", user.getAvatar()
         );
     }
