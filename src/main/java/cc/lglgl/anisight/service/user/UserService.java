@@ -92,5 +92,21 @@ public class UserService {
         );
     }
 
+    public Object getUserField(User user, String field) {
+        switch (field) {
+            case "id":
+                return user.getId();
+            case "username":
+                return user.getUsername();
+            case "email":
+                return user.getEmail();
+            case "role":
+                return user.getRole();
+            case "avatar":
+                return user.getAvatar();
+            default:
+                return null;
+        }
+    }
 
 }

@@ -1,7 +1,9 @@
 package cc.lglgl.anisight.controller.user;
 
 import cc.lglgl.anisight.domain.user.User;
+import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.user.UserService;
+import cc.lglgl.anisight.utils.CustomResponseFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +25,7 @@ public class UserController {
     }
 
     @GetMapping
-    public List<Map<String, Object>> getUsers(
+    public CustomResponse getUsers(
             @RequestParam(value = "id", required = false) Integer id,
             @RequestParam(value = "username", required = false) String username,
             @RequestParam(value = "email", required = false) String email,
@@ -46,39 +48,53 @@ public class UserController {
         }
 
         if (users == null) {
-            return null;
+            return CustomResponseFactory.error("No user found");
         }
-
 
         List<Map<String, Object>> usersInfo = new ArrayList<>();
-        if (fields != null) {
-            for (User user : users) {
-                usersInfo.add(userService.user2Map(user, fields));
+        try {
+            if (fields != null) {
+                for (User user : users) {
+                    usersInfo.add(userService.user2Map(user, fields));
+                }
+            } else {
+                for (User user : users) {
+                    usersInfo.add(userService.user2Map(user));
+                }
             }
-        } else {
-            for (User user : users) {
-                usersInfo.add(userService.user2Map(user));
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return usersInfo;
+        return CustomResponseFactory.success("Executed successfully", usersInfo);
 
     }
 
     @GetMapping("/{id}")
-    public Map<String, Object> getUser(@PathVariable int id,
-                                       @RequestParam(value = "fields", required = false) List<String> fields) {
+    public CustomResponse getUser(@PathVariable int id,
+                                  @RequestParam(value = "fields", required = false) List<String> fields) {
         User user = userService.getUserById(id);
 
         if (user == null) {
-            return null;
+            return CustomResponseFactory.error("No user found");
         }
 
         if (fields != null) {
-            return userService.user2Map(user, fields);
+            return CustomResponseFactory.success("Executed successfully", userService.user2Map(user, fields));
         }
 
-        return userService.user2Map(user);
+        return CustomResponseFactory.success("Executed successfully", userService.user2Map(user));
+    }
+
+    @GetMapping("/{id}/{field}")
+    public CustomResponse getUserField(@PathVariable int id, @PathVariable String field) {
+        User user = userService.getUserById(id);
+
+        if (user == null) {
+            return CustomResponseFactory.error("No user found");
+        }
+
+        return CustomResponseFactory.success("Executed successfully", userService.getUserField(user, field));
     }
 
 }
