@@ -45,6 +45,14 @@ public class ImageService {
         return image;
     }
 
+    public Image getImageByName(String name) {
+        Image image = imageRepository.findByName(name);
+        if (image != null) {
+            image.setName(ossUrl + image.getName());
+        }
+        return image;
+    }
+
     public List<Image> getImagesByUserId(int userId) {
         List<Image> images = imageRepository.findByUserId(userId);
         for (Image image : images) {
@@ -62,14 +70,15 @@ public class ImageService {
             Image image = imageRepository.findById(id).orElse(null);
             String name = null;
             if (image != null) {
-                name = image.getName();
                 imageRepository.deleteById(id);
-                return ossUtil.deleteImage(name, ossDir);
+                return ossUtil.deleteImage(image.getName(), ossDir);
             } else {
                 return false;
             }
         } catch (Exception e) {
             return false;
+        } finally {
+            ossUtil.shutdown();
         }
     }
 
@@ -79,6 +88,8 @@ public class ImageService {
             return ossUtil.deleteAllImages(ossDir);
         } catch (Exception e) {
             return false;
+        } finally {
+            ossUtil.shutdown();
         }
     }
 
@@ -96,6 +107,8 @@ public class ImageService {
             return ossUtil.deleteImages(names, ossDir);
         } catch (Exception e) {
             return false;
+        } finally {
+            ossUtil.shutdown();
         }
     }
 

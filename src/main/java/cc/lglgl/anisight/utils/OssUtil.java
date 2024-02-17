@@ -43,6 +43,10 @@ public class OssUtil {
                 .build();
     }
 
+    public void shutdown() {
+        ossClient.shutdown();
+    }
+
     /**
      * 上传图片至OSS
      *
@@ -60,8 +64,6 @@ public class OssUtil {
             return true;
         } catch (Exception e) {
             return false;
-        } finally {
-            ossClient.shutdown();
         }
     }
 
@@ -78,8 +80,6 @@ public class OssUtil {
             return true;
         } catch (Exception e) {
             return false;
-        } finally {
-            ossClient.shutdown();
         }
     }
 
@@ -98,8 +98,6 @@ public class OssUtil {
             return deletedObjects.size() == filenames.size();
         } catch (Exception e) {
             return false;
-        } finally {
-            ossClient.shutdown();
         }
     }
 
@@ -129,6 +127,10 @@ public class OssUtil {
                         System.out.println("key name: " + s.getKey());
                         keys.add(s.getKey());
                     }
+                    keys.remove(dir);
+                    if (keys.isEmpty()) {
+                        return true;
+                    }
                     DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucketName).withKeys(keys).withEncodingType("url");
                     DeleteObjectsResult deleteObjectsResult = ossClient.deleteObjects(deleteObjectsRequest);
                     List<String> deletedObjects = deleteObjectsResult.getDeletedObjects();
@@ -147,8 +149,6 @@ public class OssUtil {
             return true;
         } catch (Exception e) {
             return false;
-        } finally {
-            ossClient.shutdown();
         }
     }
 }

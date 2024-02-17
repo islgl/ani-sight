@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @SpringBootTest
@@ -13,6 +14,21 @@ import java.util.List;
 public class ImageServiceTests {
     @Autowired
     private ImageService imageService;
+
+    @Test
+    void testAddImage() {
+        Image image = new Image();
+        image.setUserId(1);
+        image.setName("test.jpg");
+        image.setTimestamp(new Timestamp(System.currentTimeMillis()));
+        System.out.println(imageService.addImage(image));
+    }
+
+    @Test
+    void testGetImageByName(){
+        Image image = imageService.getImageByName("test.jpg");
+        System.out.println(image);
+    }
 
     @Test
     void testGetImages() {
