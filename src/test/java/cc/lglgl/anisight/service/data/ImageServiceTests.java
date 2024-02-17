@@ -21,4 +21,24 @@ public class ImageServiceTests {
             System.out.println(image);
         }
     }
+
+    @Test
+    void testDeleteImage() {
+        boolean flag = imageService.deleteImage(2);
+        System.out.println(flag);
+    }
+
+    @Test
+    void testDeleteImagesByUserId() {
+        boolean flag = imageService.deleteImagesByUserId(2);
+        System.out.println(flag);
+    }
+
+    @Test
+    void testDeleteAllImages() {
+        boolean flag = imageService.deleteAllImages();
+        System.out.println(flag);
+    }
+
+
 }

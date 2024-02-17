@@ -46,6 +46,7 @@ public class ImageController {
         }
     }
 
+
     @PostMapping
     public CustomResponse uploadImage(@RequestParam("user_id") int userId, @RequestParam("name") String name) {
         Image image = new Image();

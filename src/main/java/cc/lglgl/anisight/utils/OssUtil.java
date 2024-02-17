@@ -8,8 +8,6 @@ import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.common.comm.SignVersion;
 import com.aliyun.oss.model.*;
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
@@ -28,10 +26,10 @@ import java.util.List;
 public class OssUtil {
     private final OSS ossClient;
 
-    private final String endpoint="https://oss-cn-beijing.aliyuncs.com";
-    private final String region="cn-beijing";
-    private final String bucketName="ani-sight";
-    private final String url="https://oss.lewisliugl.cn/";
+    private final String endpoint = "https://oss-cn-beijing.aliyuncs.com";
+    private final String region = "cn-beijing";
+    private final String bucketName = "ani-sight";
+    private final String url = "https://oss.lewisliugl.cn/";
 
     public OssUtil() {
         CredentialsProvider credentialsProvider = new DefaultCredentialProvider(System.getenv("OSS_ACCESS_KEY_ID"), System.getenv("OSS_ACCESS_KEY_SECRET"));
@@ -93,14 +91,11 @@ public class OssUtil {
      * @return 删除成功返回true，否则返回false
      */
     public boolean deleteImages(List<String> filenames, String dir) {
+        filenames.replaceAll(s -> dir + s);
         try {
             DeleteObjectsResult deleteObjectsResult = ossClient.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(filenames).withEncodingType("url"));
             List<String> deletedObjects = deleteObjectsResult.getDeletedObjects();
-            if (deletedObjects.size() == filenames.size()) {
-                return true;
-            } else {
-                return false;
-            }
+            return deletedObjects.size() == filenames.size();
         } catch (Exception e) {
             return false;
         } finally {

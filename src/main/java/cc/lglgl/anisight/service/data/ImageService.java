@@ -6,6 +6,7 @@ import cc.lglgl.anisight.utils.OssUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -84,8 +85,12 @@ public class ImageService {
     public boolean deleteImagesByUserId(int userId) {
         try {
             List<Image> images = imageRepository.findByUserId(userId);
-            List<Integer> ids = images.stream().map(Image::getId).toList();
-            List<String> names = images.stream().map(Image::getName).toList();
+            List<Integer> ids = new ArrayList<>();
+            List<String> names = new ArrayList<>();
+            for (Image image : images) {
+                ids.add(image.getId());
+                names.add(image.getName());
+            }
 
             imageRepository.deleteAllById(ids);
             return ossUtil.deleteImages(names, ossDir);
@@ -94,7 +99,7 @@ public class ImageService {
         }
     }
 
-    public Map<String,Object> image2Map(Image image) {
+    public Map<String, Object> image2Map(Image image) {
         return Map.of(
                 "User ID", image.getUserId(),
                 "Filename", ossUrl + image.getName(),
