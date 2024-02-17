@@ -6,6 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.sql.Time;
+import java.sql.Timestamp;
 
 /**
  * @author lgl
@@ -18,7 +19,6 @@ public class Image {
     @Id
     private int id;
     private int userId;
-    // 图像OSS路径
-    private String image;
-    private Time timestamp;
+    private String name;
+    private Timestamp timestamp;
 }
