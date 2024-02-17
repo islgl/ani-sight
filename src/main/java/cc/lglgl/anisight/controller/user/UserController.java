@@ -171,15 +171,45 @@ public class UserController {
     }
 
     @DeleteMapping
-    public CustomResponse deleteUsers() {
-        userService.deleteUsers();
-        return CustomResponseFactory.success("Successfully deleted all users");
+    public CustomResponse deleteUsers(
+            @RequestParam(value = "id", required = false) Integer id,
+            @RequestParam(value = "username", required = false) String username,
+            @RequestParam(value = "email", required = false) String email
+    ) {
+        try {
+            if (id != null) {
+                userService.deleteUser(id);
+                return CustomResponseFactory.success("Successfully deleted user id = " + id);
+            } else if (username != null) {
+                userService.deleteUserByUsername(username);
+                return CustomResponseFactory.success("Successfully deleted user username = " + username);
+            } else if (email != null) {
+                userService.deleteUserByEmail(email);
+                return CustomResponseFactory.success("Successfully deleted user email = " + email);
+            } else {
+                userService.deleteUsers();
+                return CustomResponseFactory.success("Successfully deleted all users");
+            }
+        } catch (Exception e) {
+            return CustomResponseFactory.error("Failed to delete user");
+        }
     }
 
     @DeleteMapping("/{id}")
     public CustomResponse deleteUser(@PathVariable int id) {
         userService.deleteUser(id);
         return CustomResponseFactory.success("Successfully deleted user id = " + id);
+    }
+
+    @PostMapping("/register")
+    public CustomResponse register(@RequestParam String username,
+                                   @RequestParam String password,
+                                   @RequestParam String email,
+                                   @RequestParam String confirmPassword
+    ) {
+        CustomResponse response = userService.register(username, email, password, confirmPassword);
+
+        return response;
     }
 
 }

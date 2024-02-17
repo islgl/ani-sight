@@ -4,12 +4,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author lgl
  */
 
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "t_user")
 public class User {
@@ -20,9 +22,6 @@ public class User {
     private int role;
     private String email;
     private String avatar;
-
-    public User() {
-    }
 
     public User(int id, String username, String password, int role, String email, String avatar) {
         this.id = id;

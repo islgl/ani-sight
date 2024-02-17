@@ -10,11 +10,7 @@ import java.util.List;
  */
 @Repository
 public interface HistoryRepository extends JpaRepository<History, Integer> {
-    public List<History> findByUserId(int userId);
+    List<History> findByUserId(int userId);
 
-    public History findByImageId(int imageId);
-
-    public void deleteAllByUserId(int userId);
-
-    public void deleteByImageId(int imageId);
+    History findByImageId(int imageId);
 }

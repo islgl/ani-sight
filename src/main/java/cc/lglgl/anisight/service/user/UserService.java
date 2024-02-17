@@ -2,13 +2,15 @@ package cc.lglgl.anisight.service.user;
 
 import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.domain.user.UserRepository;
+import cc.lglgl.anisight.dto.CustomResponse;
+import cc.lglgl.anisight.utils.CustomResponseFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author lgl
@@ -18,6 +20,9 @@ public class UserService {
 
     @Autowired
     private final UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -54,10 +59,19 @@ public class UserService {
         return userRepository.save(user);
     }
 
-
     // Delete
     public void deleteUser(int id) {
         userRepository.deleteById(id);
+    }
+
+    public void deleteUserByUsername(String username) {
+        User user = userRepository.findByUsername(username);
+        userRepository.delete(user);
+    }
+
+    public void deleteUserByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        userRepository.delete(user);
     }
 
     public void deleteUsers() {
@@ -114,6 +128,37 @@ public class UserService {
                 return user.getAvatar();
             default:
                 return null;
+        }
+    }
+
+    public CustomResponse register(String username, String email, String password, String confirmPassword) {
+        try {
+            if (!password.equals(confirmPassword)) {
+                return CustomResponseFactory.error("两次输入密码不一致");
+            }
+            if (getUserByUsername(username) != null) {
+                return CustomResponseFactory.error("用户名已存在");
+            }
+            if (getUserByEmail(email) != null) {
+                return CustomResponseFactory.error("该邮箱已被注册");
+            }
+
+            // 强度检查
+            if (username.length() < 4 || username.length() > 16) {
+                return CustomResponseFactory.error("用户名长度应在4-16位之间");
+            }
+            if (password.length() < 6 || password.length() > 16) {
+                return CustomResponseFactory.error("密码长度应在6-16位之间");
+            }
+
+            // 对密码进行加密
+            String cipher = passwordEncoder.encode(password);
+
+            User user = new User(username, cipher, email);
+            saveUser(user);
+            return CustomResponseFactory.success("注册成功", user2Map(getUserByUsername(username), List.of("id", "username", "email", "role")));
+        } catch (Exception e) {
+            return CustomResponseFactory.error("注册失败");
         }
     }
 
