@@ -9,7 +9,7 @@ import java.io.*;
 
 @SpringBootTest
 @RestController
-public class OssUtilTest {
+public class OssUtilTests {
     @Autowired
     private OssUtil ossUtil;
 

@@ -2,6 +2,8 @@ package cc.lglgl.anisight.dto;
 
 import lombok.Data;
 
+import java.util.Map;
+
 
 /**
  * @author lgl
@@ -18,5 +20,7 @@ public class CustomResponse {
         this.data = data;
     }
 }
+
+
 
 

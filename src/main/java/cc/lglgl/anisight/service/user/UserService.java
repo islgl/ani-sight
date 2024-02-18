@@ -4,18 +4,28 @@ import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.domain.user.UserRepository;
 import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
+import cc.lglgl.anisight.utils.EmailUtil;
+import com.aliyun.dm20151123.models.SingleSendMailResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * @author lgl
  */
 @Service
+@CacheConfig(cacheNames = "user")
 public class UserService {
 
     @Autowired
@@ -23,6 +33,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CacheManager verifyCodeCacheManager;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -130,6 +143,36 @@ public class UserService {
                 return null;
         }
     }
+
+    public String generateCode(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(characters.charAt(random.nextInt(characters.length())));
+        }
+        return sb.toString();
+    }
+
+    @Cacheable(value = "VERIFYCODE", key = "#email",unless = "#result==null",cacheManager = "verifyCodeCacheManager")
+    public String sendVerifyCode(String email) {
+        String code = generateCode(6);
+        try {SingleSendMailResponse response = EmailUtil.sendEmail(
+                    0,
+                    email,
+                    "AniSight 邮箱验证",
+                    "欢迎使用AniSight！您的验证码是：" + code + "。验证码有效期为5分钟。"
+            );
+            if (response != null) {
+                return code;
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 
     public CustomResponse register(String username, String email, String password, String confirmPassword) {
         try {

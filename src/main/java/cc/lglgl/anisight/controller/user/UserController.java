@@ -4,9 +4,12 @@ import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.user.UserService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
+import cc.lglgl.anisight.utils.EmailUtil;
+import com.aliyun.dm20151123.models.SingleSendMailResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -199,6 +202,17 @@ public class UserController {
     public CustomResponse deleteUser(@PathVariable int id) {
         userService.deleteUser(id);
         return CustomResponseFactory.success("Successfully deleted user id = " + id);
+    }
+
+    /**
+     * 获取邮箱验证码
+     *
+     * @param email 待验证的邮箱
+     * @return 包含请求ID的响应
+     */
+    @GetMapping("/email-verify")
+    public CustomResponse emailVerify(@RequestParam String email) {
+        return null;
     }
 
     @PostMapping("/register")
