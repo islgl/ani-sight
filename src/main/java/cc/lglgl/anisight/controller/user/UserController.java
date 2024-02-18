@@ -4,12 +4,9 @@ import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.user.UserService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
-import cc.lglgl.anisight.utils.EmailUtil;
-import com.aliyun.dm20151123.models.SingleSendMailResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -212,7 +209,11 @@ public class UserController {
      */
     @GetMapping("/email-verify")
     public CustomResponse emailVerify(@RequestParam String email) {
-        return null;
+        String code = userService.sendVerifyCode(email);
+        if (code == null) {
+            return CustomResponseFactory.error("Failed to send email");
+        }
+        return CustomResponseFactory.success("Successfully sent email");
     }
 
     @PostMapping("/register")
