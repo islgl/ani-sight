@@ -2,16 +2,13 @@ package cc.lglgl.anisight.service.user;
 
 import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.domain.user.UserRepository;
-import cc.lglgl.anisight.dto.CustomResponse;
-import cc.lglgl.anisight.utils.CustomResponseFactory;
 import cc.lglgl.anisight.utils.EmailUtil;
 import com.aliyun.dm20151123.models.SingleSendMailResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -63,8 +60,11 @@ public class UserService {
     }
 
     // Create
-    public User saveUser(User user) {
-        return userRepository.save(user);
+    @CachePut(value = "USER", key = "#user.username", unless = "#result==null")
+    public User addUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+        return userRepository.findByUsername(user.getUsername());
     }
 
     // Update
@@ -154,10 +154,11 @@ public class UserService {
         return sb.toString();
     }
 
-    @Cacheable(value = "VERIFYCODE", key = "#email",unless = "#result==null",cacheManager = "verifyCodeCacheManager")
+    @Cacheable(value = "VERIFYCODE", key = "#email", unless = "#result==null", cacheManager = "verifyCodeCacheManager")
     public String sendVerifyCode(String email) {
         String code = generateCode(6);
-        try {SingleSendMailResponse response = EmailUtil.sendEmail(
+        try {
+            SingleSendMailResponse response = EmailUtil.sendEmail(
                     0,
                     email,
                     "AniSight 邮箱验证",
@@ -173,36 +174,12 @@ public class UserService {
         }
     }
 
+    public String getVerifyCodeFromCache(String email) {
+        return verifyCodeCacheManager.getCache("VERIFYCODE").get(email, String.class);
+    }
 
-    public CustomResponse register(String username, String email, String password, String confirmPassword) {
-        try {
-            if (!password.equals(confirmPassword)) {
-                return CustomResponseFactory.error("两次输入密码不一致");
-            }
-            if (getUserByUsername(username) != null) {
-                return CustomResponseFactory.error("用户名已存在");
-            }
-            if (getUserByEmail(email) != null) {
-                return CustomResponseFactory.error("该邮箱已被注册");
-            }
-
-            // 强度检查
-            if (username.length() < 4 || username.length() > 16) {
-                return CustomResponseFactory.error("用户名长度应在4-16位之间");
-            }
-            if (password.length() < 6 || password.length() > 16) {
-                return CustomResponseFactory.error("密码长度应在6-16位之间");
-            }
-
-            // 对密码进行加密
-            String cipher = passwordEncoder.encode(password);
-
-            User user = new User(username, cipher, email);
-            saveUser(user);
-            return CustomResponseFactory.success("注册成功", user2Map(getUserByUsername(username), List.of("id", "username", "email", "role")));
-        } catch (Exception e) {
-            return CustomResponseFactory.error("注册失败");
-        }
+    public void removeVerifyCodeFromCache(String email) {
+        verifyCodeCacheManager.getCache("VERIFYCODE").evict(email);
     }
 
 }

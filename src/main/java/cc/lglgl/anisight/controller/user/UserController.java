@@ -100,7 +100,7 @@ public class UserController {
     @PostMapping
     public CustomResponse createUser(User user) {
         try {
-            userService.saveUser(user);
+            userService.addUser(user);
             return CustomResponseFactory.success("Successfully created user",
                     userService.user2Map(user));
         } catch (Exception e) {
@@ -178,12 +178,21 @@ public class UserController {
     ) {
         try {
             if (id != null) {
+                if (userService.getUserById(id) == null) {
+                    return CustomResponseFactory.error("No user found");
+                }
                 userService.deleteUser(id);
                 return CustomResponseFactory.success("Successfully deleted user id = " + id);
             } else if (username != null) {
+                if (userService.getUserByUsername(username) == null) {
+                    return CustomResponseFactory.error("No user found");
+                }
                 userService.deleteUserByUsername(username);
                 return CustomResponseFactory.success("Successfully deleted user username = " + username);
             } else if (email != null) {
+                if (userService.getUserByEmail(email) == null) {
+                    return CustomResponseFactory.error("No user found");
+                }
                 userService.deleteUserByEmail(email);
                 return CustomResponseFactory.success("Successfully deleted user email = " + email);
             } else {
@@ -220,11 +229,51 @@ public class UserController {
     public CustomResponse register(@RequestParam String username,
                                    @RequestParam String password,
                                    @RequestParam String email,
-                                   @RequestParam String confirmPassword
+                                   @RequestParam String confirmPassword,
+                                   @RequestParam String verifyCode
     ) {
-        CustomResponse response = userService.register(username, email, password, confirmPassword);
+        if (!password.equals(confirmPassword)) {
+            return CustomResponseFactory.error("两次输入密码不一致");
+        }
+        if (userService.getUserByUsername(username) != null) {
+            return CustomResponseFactory.error("用户名已存在");
+        }
+        if (userService.getUserByEmail(email) != null) {
+            return CustomResponseFactory.error("该邮箱已被注册");
+        }
+        if (verifyCode.isEmpty()) {
+            return CustomResponseFactory.error("请输入验证码");
+        }
 
-        return response;
+        // 强度检查
+        if (username.length() < 4 || username.length() > 16) {
+            return CustomResponseFactory.error("用户名长度应在4-16位之间");
+        }
+        if (password.length() < 6 || password.length() > 16) {
+            return CustomResponseFactory.error("密码长度应在6-16位之间");
+        }
+
+        // TODO: 特权验证码，实际上线记得删除！
+        if (!"adminCode".equals(verifyCode)) {
+            // 验证码检查
+            String trueCode = userService.getVerifyCodeFromCache(email);
+            if (trueCode == null) {
+                return CustomResponseFactory.error("验证码失效");
+            } else if (!trueCode.equals(verifyCode)) {
+                return CustomResponseFactory.error("验证码错误");
+            } else {
+                userService.removeVerifyCodeFromCache(email);
+            }
+        }
+
+        User user = new User(username, password, email);
+
+        try {
+            User userInDb = userService.addUser(user);
+            return CustomResponseFactory.success("注册成功", userService.user2Map(userInDb));
+        } catch (Exception e) {
+            return CustomResponseFactory.error("注册失败");
+        }
     }
 
 }
