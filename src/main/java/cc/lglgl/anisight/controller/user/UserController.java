@@ -121,7 +121,7 @@ public class UserController {
             return CustomResponseFactory.error("No user found");
         } else {
             if (userInfo.containsKey("username")) {
-                String username=userInfo.get("username");
+                String username = userInfo.get("username");
                 if (userService.getUserByUsername(username) != null) {
                     return CustomResponseFactory.error("用户名已存在");
                 }
@@ -135,7 +135,7 @@ public class UserController {
                 user.setUsername(userInfo.get("username"));
             }
             if (userInfo.containsKey("password")) {
-                String password=userInfo.get("password");
+                String password = userInfo.get("password");
                 if (password.length() < 6 || password.length() > 16) {
                     return CustomResponseFactory.error("密码长度应在6-16位之间");
                 }
@@ -306,7 +306,7 @@ public class UserController {
         }
 
         // TODO: 特权验证码，实际上线记得删除！
-        if (!"adminCode".equals(verifyCode)) {
+        if (!"admincode".equals(verifyCode)) {
             // 验证码检查
             String trueCode = userService.getVerifyCodeFromCache(email);
             if (trueCode == null) {
@@ -353,8 +353,7 @@ public class UserController {
         }
 
         String token = jwtUtil.generateToken(user.getUsername());
-        Map<String, Object> userInfo = userService.user2Map(user);
-        userInfo.put("Token", token);
-        return CustomResponseFactory.success("登录成功", userInfo);
+        Map<String, Object> userInfo = userService.user2Map(user, token);
+        return CustomResponseFactory.success("Successfully login", userInfo);
     }
 }

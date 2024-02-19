@@ -141,6 +141,17 @@ public class UserService {
         );
     }
 
+    public Map<String,Object> user2Map(User user,String token){
+        return Map.of(
+                "uid", user.getUid(),
+                "username", user.getUsername(),
+                "email", user.getEmail(),
+                "role", user.getRole() == 0 ? "User" : "Administrator",
+                "avatar", user.getAvatar(),
+                "token", token
+        );
+    }
+
     public Object getUserField(User user, String field) {
         switch (field) {
             case "uid":
