@@ -4,6 +4,7 @@ import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.user.UserService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
+import cc.lglgl.anisight.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,13 +21,16 @@ public class UserController {
     @Autowired
     private final UserService userService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @GetMapping
     public CustomResponse getUsers(
-            @RequestParam(value = "id", required = false) Integer id,
+            @RequestParam(value = "uid", required = false) Integer uid,
             @RequestParam(value = "username", required = false) String username,
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "role", required = false) String role,
@@ -34,8 +38,8 @@ public class UserController {
     ) {
         List<User> users;
 
-        if (id != null) {
-            users = List.of(userService.getUserById(id));
+        if (uid != null) {
+            users = List.of(userService.getUserByUid(uid));
         } else if (username != null) {
             users = List.of(userService.getUserByUsername(username));
         } else if (email != null) {
@@ -70,10 +74,10 @@ public class UserController {
 
     }
 
-    @GetMapping("/{id}")
-    public CustomResponse getUser(@PathVariable int id,
+    @GetMapping("/{uid}")
+    public CustomResponse getUser(@PathVariable int uid,
                                   @RequestParam(value = "fields", required = false) List<String> fields) {
-        User user = userService.getUserById(id);
+        User user = userService.getUserByUid(uid);
 
         if (user == null) {
             return CustomResponseFactory.error("No user found");
@@ -86,9 +90,9 @@ public class UserController {
         return CustomResponseFactory.success("Executed successfully", userService.user2Map(user));
     }
 
-    @GetMapping("/{id}/{field}")
-    public CustomResponse getUserField(@PathVariable int id, @PathVariable String field) {
-        User user = userService.getUserById(id);
+    @GetMapping("/{uid}/{field}")
+    public CustomResponse getUserField(@PathVariable int uid, @PathVariable String field) {
+        User user = userService.getUserByUid(uid);
 
         if (user == null) {
             return CustomResponseFactory.error("No user found");
@@ -108,21 +112,43 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{id}")
-    public CustomResponse updateUser(@PathVariable int id,
+    @PutMapping("/{uid}")
+    public CustomResponse updateUser(@PathVariable int uid,
                                      @RequestParam Map<String, String> userInfo) {
-        User user = userService.getUserById(id);
+        User user = userService.getUserByUid(uid);
 
         if (user == null) {
             return CustomResponseFactory.error("No user found");
         } else {
             if (userInfo.containsKey("username")) {
+                String username=userInfo.get("username");
+                if (userService.getUserByUsername(username) != null) {
+                    return CustomResponseFactory.error("用户名已存在");
+                }
+                if (!userService.isUsernameValid(username)) {
+                    return CustomResponseFactory.error("用户名含有非法字符");
+                }
+                if (username.length() < 4 || username.length() > 16) {
+                    return CustomResponseFactory.error("用户名长度应在4-16位之间");
+                }
+
                 user.setUsername(userInfo.get("username"));
             }
             if (userInfo.containsKey("password")) {
-                user.setPassword(userInfo.get("password"));
+                String password=userInfo.get("password");
+                if (password.length() < 6 || password.length() > 16) {
+                    return CustomResponseFactory.error("密码长度应在6-16位之间");
+                }
+                user.setPassword(password);
+
             }
             if (userInfo.containsKey("email")) {
+                if (userService.getUserByEmail(userInfo.get("email")) != null) {
+                    return CustomResponseFactory.error("邮箱已存在");
+                }
+                if (!userService.isEmailValid(userInfo.get("email"))) {
+                    return CustomResponseFactory.error("邮箱格式不正确");
+                }
                 user.setEmail(userInfo.get("email"));
             }
             if (userInfo.containsKey("role")) {
@@ -137,21 +163,39 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{id}/{field}")
-    public CustomResponse updateUserField(@PathVariable int id, @PathVariable String field, @RequestBody String value) {
-        User user = userService.getUserById(id);
+    @PutMapping("/{uid}/{field}")
+    public CustomResponse updateUserField(@PathVariable int uid, @PathVariable String field, @RequestBody String value) {
+        User user = userService.getUserByUid(uid);
 
         if (user == null) {
             return CustomResponseFactory.error("No user found");
         } else {
             switch (field) {
                 case "username":
+                    if (userService.getUserByUsername(value) != null) {
+                        return CustomResponseFactory.error("用户名已存在");
+                    }
+                    if (!userService.isUsernameValid(value)) {
+                        return CustomResponseFactory.error("用户名含有非法字符");
+                    }
+                    if (value.length() < 4 || value.length() > 16) {
+                        return CustomResponseFactory.error("用户名长度应在4-16位之间");
+                    }
                     user.setUsername(value);
                     break;
                 case "password":
+                    if (value.length() < 6 || value.length() > 16) {
+                        return CustomResponseFactory.error("密码长度应在6-16位之间");
+                    }
                     user.setPassword(value);
                     break;
                 case "email":
+                    if (userService.getUserByEmail(value) != null) {
+                        return CustomResponseFactory.error("邮箱已存在");
+                    }
+                    if (!userService.isEmailValid(value)) {
+                        return CustomResponseFactory.error("邮箱格式不正确");
+                    }
                     user.setEmail(value);
                     break;
                 case "role":
@@ -161,7 +205,7 @@ public class UserController {
                     user.setAvatar(value);
                     break;
                 default:
-                    return CustomResponseFactory.error("Invalid field");
+                    return CustomResponseFactory.error("Invalid field name");
             }
             System.out.println(user);
             userService.updateUser(user);
@@ -172,28 +216,30 @@ public class UserController {
 
     @DeleteMapping
     public CustomResponse deleteUsers(
-            @RequestParam(value = "id", required = false) Integer id,
+            @RequestParam(value = "uid", required = false) Integer uid,
             @RequestParam(value = "username", required = false) String username,
             @RequestParam(value = "email", required = false) String email
     ) {
         try {
-            if (id != null) {
-                if (userService.getUserById(id) == null) {
+            if (uid != null) {
+                if (userService.getUserByUid(uid) == null) {
                     return CustomResponseFactory.error("No user found");
                 }
-                userService.deleteUser(id);
-                return CustomResponseFactory.success("Successfully deleted user id = " + id);
+                userService.deleteUserByUid(uid);
+                return CustomResponseFactory.success("Successfully deleted user uid = " + uid);
             } else if (username != null) {
-                if (userService.getUserByUsername(username) == null) {
+                User user = userService.getUserByUsername(username);
+                if (user == null) {
                     return CustomResponseFactory.error("No user found");
                 }
-                userService.deleteUserByUsername(username);
+                userService.deleteUserByUid(user.getUid());
                 return CustomResponseFactory.success("Successfully deleted user username = " + username);
             } else if (email != null) {
-                if (userService.getUserByEmail(email) == null) {
+                User user = userService.getUserByEmail(email);
+                if (user == null) {
                     return CustomResponseFactory.error("No user found");
                 }
-                userService.deleteUserByEmail(email);
+                userService.deleteUserByUid(user.getUid());
                 return CustomResponseFactory.success("Successfully deleted user email = " + email);
             } else {
                 userService.deleteUsers();
@@ -204,10 +250,10 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public CustomResponse deleteUser(@PathVariable int id) {
-        userService.deleteUser(id);
-        return CustomResponseFactory.success("Successfully deleted user id = " + id);
+    @DeleteMapping("/{uid}")
+    public CustomResponse deleteUser(@PathVariable int uid) {
+        userService.deleteUserByUid(uid);
+        return CustomResponseFactory.success("Successfully deleted user uid = " + uid);
     }
 
     /**
@@ -252,6 +298,12 @@ public class UserController {
         if (password.length() < 6 || password.length() > 16) {
             return CustomResponseFactory.error("密码长度应在6-16位之间");
         }
+        if (!userService.isUsernameValid(username)) {
+            return CustomResponseFactory.error("用户名含有非法字符");
+        }
+        if (!userService.isEmailValid(email)) {
+            return CustomResponseFactory.error("邮箱格式不正确");
+        }
 
         // TODO: 特权验证码，实际上线记得删除！
         if (!"adminCode".equals(verifyCode)) {
@@ -276,4 +328,33 @@ public class UserController {
         }
     }
 
+    @PostMapping("/login")
+    public CustomResponse login(@RequestParam String usernameOrEmail,
+                                @RequestParam String password) {
+        if (usernameOrEmail == null || usernameOrEmail.isEmpty()) {
+            return CustomResponseFactory.error("用户名或邮箱不能为空");
+        }
+        if (password == null || password.isEmpty()) {
+            return CustomResponseFactory.error("密码不能为空");
+        }
+        // 判断是用户名还是邮箱
+        User user = null;
+        if (usernameOrEmail.contains("@")) {
+            user = userService.getUserByEmail(usernameOrEmail);
+        } else {
+            user = userService.getUserByUsername(usernameOrEmail);
+        }
+        if (user == null) {
+            return CustomResponseFactory.error("用户不存在");
+        }
+
+        if (!userService.checkPassword(password, user.getPassword())) {
+            return CustomResponseFactory.error("密码错误");
+        }
+
+        String token = jwtUtil.generateToken(user.getUsername());
+        Map<String, Object> userInfo = userService.user2Map(user);
+        userInfo.put("Token", token);
+        return CustomResponseFactory.success("登录成功", userInfo);
+    }
 }

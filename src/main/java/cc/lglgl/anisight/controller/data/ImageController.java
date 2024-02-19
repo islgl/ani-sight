@@ -26,14 +26,14 @@ public class ImageController {
     @GetMapping
     public CustomResponse getImages(
             @RequestParam(value = "id", required = false) Integer id,
-            @RequestParam(value = "user_id", required = false) Integer userId
+            @RequestParam(value = "uid", required = false) Integer uid
     ) {
         List<Image> images = null;
 
         if (id != null) {
             images = List.of(imageService.getImageById(id));
-        } else if (userId != null) {
-            images = imageService.getImagesByUserId(userId);
+        } else if (uid != null) {
+            images = imageService.getImagesByUid(uid);
         } else {
             images = imageService.getImages();
         }
@@ -48,9 +48,9 @@ public class ImageController {
 
 
     @PostMapping
-    public CustomResponse uploadImage(@RequestParam("user_id") int userId, @RequestParam("name") String name) {
+    public CustomResponse uploadImage(@RequestParam("uid") int uid, @RequestParam("name") String name) {
         Image image = new Image();
-        image.setUserId(userId);
+        image.setUid(uid);
         image.setName(name);
         // 获取当前时间
         Timestamp time = new Timestamp(System.currentTimeMillis());

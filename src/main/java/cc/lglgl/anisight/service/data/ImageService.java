@@ -53,8 +53,8 @@ public class ImageService {
         return image;
     }
 
-    public List<Image> getImagesByUserId(int userId) {
-        List<Image> images = imageRepository.findByUserId(userId);
+    public List<Image> getImagesByUid(int uid) {
+        List<Image> images = imageRepository.findAllByUid(uid);
         for (Image image : images) {
             image.setName(ossUrl + image.getName());
         }
@@ -93,9 +93,9 @@ public class ImageService {
         }
     }
 
-    public boolean deleteImagesByUserId(int userId) {
+    public boolean deleteImagesByUid(int uid) {
         try {
-            List<Image> images = imageRepository.findByUserId(userId);
+            List<Image> images = imageRepository.findAllByUid(uid);
             List<Integer> ids = new ArrayList<>();
             List<String> names = new ArrayList<>();
             for (Image image : images) {
@@ -114,7 +114,7 @@ public class ImageService {
 
     public Map<String, Object> image2Map(Image image) {
         return Map.of(
-                "User ID", image.getUserId(),
+                "UID", image.getUid(),
                 "Filename", ossUrl + image.getName(),
                 "Timestamp", image.getTimestamp()
         );

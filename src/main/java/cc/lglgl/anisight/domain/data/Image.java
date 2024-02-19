@@ -18,7 +18,7 @@ import java.sql.Timestamp;
 public class Image {
     @Id
     private int id;
-    private int userId;
+    private int uid;
     private String name;
     private Timestamp timestamp;
 }

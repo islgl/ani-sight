@@ -1,5 +1,6 @@
 package cc.lglgl.anisight.service.user;
 
+import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.dto.CustomResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,17 @@ public class UserServiceTests {
 
     @Autowired
     private UserService userService;
+
+    @Test
+    void testGetUserByUsername() {
+        String username = "admin";
+        try {
+            User user = userService.getUserByUsername(username);
+            System.out.println("User: " + user);
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Test
     void testGenerateCode() {

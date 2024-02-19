@@ -10,7 +10,7 @@ import java.util.List;
  */
 @Repository
 public interface ImageRepository extends JpaRepository<Image, Integer> {
-    List<Image> findByUserId(int userId);
+    List<Image> findAllByUid(int uid);
 
     Image findByName(String name);
 

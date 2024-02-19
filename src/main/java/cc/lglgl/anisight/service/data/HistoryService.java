@@ -36,7 +36,7 @@ public class HistoryService {
     }
 
     public History addHistory(Map<String, String> info) {
-        History history = new History(Integer.parseInt(info.get("userId")),
+        History history = new History(Integer.parseInt(info.get("uid")),
                 Integer.parseInt(info.get("imageId")),
                 new Timestamp(System.currentTimeMillis()),
                 info.get("mask"),
@@ -64,8 +64,8 @@ public class HistoryService {
         return history;
     }
 
-    public List<History> getHistoriesByUserId(int userId) {
-        List<History> histories = historyRepository.findByUserId(userId);
+    public List<History> getHistoriesByUid(int uid) {
+        List<History> histories = historyRepository.findAllByUid(uid);
         for (History history : histories) {
             history.setMask(masksUrl + history.getMask());
             history.setLabel(labelsUrl + history.getLabel());
@@ -113,9 +113,9 @@ public class HistoryService {
         }
     }
 
-    public boolean deleteHistoriesByUserId(int userId) {
+    public boolean deleteHistoriesByUid(int uid) {
         try {
-            List<History> histories = historyRepository.findByUserId(userId);
+            List<History> histories = historyRepository.findAllByUid(uid);
             List<Integer> ids = new ArrayList<>();
             List<String> masks = new ArrayList<>();
             List<String> labels = new ArrayList<>();
@@ -157,7 +157,7 @@ public class HistoryService {
 
     public Map<String, Object> history2Map(History history) {
         return Map.of(
-                "User ID", history.getUserId(),
+                "UID", history.getUid(),
                 "Image ID", history.getImageId(),
                 "Time", history.getTimestamp(),
                 "Mask", history.getMask(),

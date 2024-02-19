@@ -19,7 +19,7 @@ import java.sql.Timestamp;
 public class History {
     @Id
     private int id;
-    private int userId;
+    private int uid;
     // 是否收藏
     private int star;
     private int imageId;
@@ -34,7 +34,7 @@ public class History {
     private String caption;
 
     public History(int userId, int imageId, Timestamp timestamp, String mask, String label, String bboxes, String caption) {
-        this.userId = userId;
+        this.uid = userId;
         this.imageId = imageId;
         this.timestamp = timestamp;
         this.mask = mask;

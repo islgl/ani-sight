@@ -3,20 +3,20 @@ package cc.lglgl.anisight.service.user;
 import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.domain.user.UserRepository;
 import cc.lglgl.anisight.utils.EmailUtil;
+import cc.lglgl.anisight.utils.UidUtil;
 import com.aliyun.dm20151123.models.SingleSendMailResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * @author lgl
@@ -31,28 +31,45 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Qualifier("verifyCodeCacheManager")
     @Autowired
     private CacheManager verifyCodeCacheManager;
+
+    @Qualifier("userCacheManager")
+    @Autowired
+    private CacheManager userCacheManager;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     // Read
-    public User getUserById(int id) {
-        return userRepository.findById(id).orElse(null);
+    @Cacheable(value = "USER", key = "#uid", unless = "#result==null", cacheManager = "userCacheManager")
+    public User getUserByUid(int uid) {
+        return userRepository.findByUid(uid);
     }
 
     public User getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        userCacheManager.getCache("USER").put(user.getUid(), user);
+        return user;
     }
 
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return null;
+        }
+        userCacheManager.getCache("USER").put(user.getUid(), user);
+        return user;
     }
 
+
     public List<User> getUsersByRole(int role) {
-        return userRepository.findByRole(role);
+        return userRepository.findAllByRole(role);
     }
 
     public List<User> getAllUsers() {
@@ -60,34 +77,31 @@ public class UserService {
     }
 
     // Create
-    @CachePut(value = "USER", key = "#user.username", unless = "#result==null")
+    @CachePut(value = "USER", key = "#user.uid", unless = "#result==null")
     public User addUser(User user) {
+        user.setUid(UidUtil.generateUid(userRepository.count()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        return userRepository.findByUsername(user.getUsername());
+        return user;
     }
 
     // Update
+    @CachePut(value = "USER", key = "#user.uid", unless = "#result==null")
     public User updateUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
-    // Delete
-    public void deleteUser(int id) {
-        userRepository.deleteById(id);
-    }
-
-    public void deleteUserByUsername(String username) {
-        User user = userRepository.findByUsername(username);
+    @CacheEvict(value = "USER", key = "#uid", cacheManager = "userCacheManager")
+    public void deleteUserByUid(int uid) {
+        User user = userRepository.findByUid(uid);
         userRepository.delete(user);
     }
 
-    public void deleteUserByEmail(String email) {
-        User user = userRepository.findByEmail(email);
-        userRepository.delete(user);
-    }
 
     public void deleteUsers() {
+        // 清理所有缓存
+        userCacheManager.getCache("USER").clear();
         userRepository.deleteAll();
     }
 
@@ -95,8 +109,8 @@ public class UserService {
         Map<String, Object> filteredUser = new HashMap<>();
         for (String field : fields) {
             switch (field) {
-                case "id":
-                    filteredUser.put("id", user.getId());
+                case "uid":
+                    filteredUser.put("uid", user.getUid());
                     break;
                 case "username":
                     filteredUser.put("username", user.getUsername());
@@ -119,7 +133,7 @@ public class UserService {
 
     public Map<String, Object> user2Map(User user) {
         return Map.of(
-                "id", user.getId(),
+                "uid", user.getUid(),
                 "username", user.getUsername(),
                 "email", user.getEmail(),
                 "role", user.getRole() == 0 ? "User" : "Administrator",
@@ -129,8 +143,8 @@ public class UserService {
 
     public Object getUserField(User user, String field) {
         switch (field) {
-            case "id":
-                return user.getId();
+            case "uid":
+                return user.getUid();
             case "username":
                 return user.getUsername();
             case "email":
@@ -154,7 +168,7 @@ public class UserService {
         return sb.toString();
     }
 
-    @Cacheable(value = "VERIFYCODE", key = "#email", unless = "#result==null", cacheManager = "verifyCodeCacheManager")
+    @CachePut(value = "VERIFYCODE", key = "#email", unless = "#result==null", cacheManager = "verifyCodeCacheManager")
     public String sendVerifyCode(String email) {
         String code = generateCode(6);
         try {
@@ -180,6 +194,25 @@ public class UserService {
 
     public void removeVerifyCodeFromCache(String email) {
         verifyCodeCacheManager.getCache("VERIFYCODE").evict(email);
+    }
+
+    public boolean isUsernameValid(String username) {
+        String specialCharacters = "!@#$%^&*()_+{}|:<>?`-=[]\\;',./~";
+        for (char c : username.toCharArray()) {
+            if (specialCharacters.indexOf(c) != -1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean isEmailValid(String email) {
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+        return email.matches(emailRegex);
+    }
+
+    public boolean checkPassword(String password, String encodedPassword) {
+        return passwordEncoder.matches(password, encodedPassword);
     }
 
 }
