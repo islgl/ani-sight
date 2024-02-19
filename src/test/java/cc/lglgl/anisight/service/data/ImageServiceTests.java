@@ -18,7 +18,7 @@ public class ImageServiceTests {
     @Test
     void testAddImage() {
         Image image = new Image();
-        image.setUserId(1);
+        image.setUid(10000);
         image.setName("test.jpg");
         image.setTimestamp(new Timestamp(System.currentTimeMillis()));
         System.out.println(imageService.addImage(image));
@@ -46,7 +46,7 @@ public class ImageServiceTests {
 
     @Test
     void testDeleteImagesByUserId() {
-        boolean flag = imageService.deleteImagesByUserId(2);
+        boolean flag = imageService.deleteImagesByUid(10000);
         System.out.println(flag);
     }
 

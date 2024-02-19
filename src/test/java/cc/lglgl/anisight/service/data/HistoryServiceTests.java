@@ -31,7 +31,7 @@ public class HistoryServiceTests {
 
     @Test
     public void testGetHistoryByUserId() {
-        System.out.println(historyService.getHistoriesByUserId(1));
+        System.out.println(historyService.getHistoriesByUid(10000));
     }
 
     @Test
@@ -41,7 +41,7 @@ public class HistoryServiceTests {
 
     @Test
     public void testDeleteHistoryByUserId() {
-        System.out.println(historyService.deleteHistoriesByUserId(1));
+        System.out.println(historyService.deleteHistoriesByUid(10000));
     }
 
     @Test
