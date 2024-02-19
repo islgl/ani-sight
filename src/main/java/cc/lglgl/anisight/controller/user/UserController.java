@@ -356,4 +356,45 @@ public class UserController {
         Map<String, Object> userInfo = userService.user2Map(user, token);
         return CustomResponseFactory.success("Successfully login", userInfo);
     }
+
+    @PostMapping("/resetpwd")
+    public CustomResponse resetPwd(@RequestParam String email,
+                                   @RequestParam String newPassword,
+                                   @RequestParam String confirmPassword,
+                                   @RequestParam String verifyCode) {
+        if (!newPassword.equals(confirmPassword)) {
+            return CustomResponseFactory.error("两次输入密码不一致");
+        }
+        if (verifyCode.isEmpty()) {
+            return CustomResponseFactory.error("请输入验证码");
+        }
+
+        if (newPassword.length() < 6 || newPassword.length() > 16) {
+            return CustomResponseFactory.error("密码长度应在6-16位之间");
+        }
+
+        if (!userService.isEmailValid(email)) {
+            return CustomResponseFactory.error("邮箱格式不正确");
+        }
+
+        // 验证码检查
+        String trueCode = userService.getVerifyCodeFromCache(email);
+        if (trueCode == null) {
+            return CustomResponseFactory.error("验证码失效");
+        } else if (!trueCode.equals(verifyCode)) {
+            return CustomResponseFactory.error("验证码错误");
+        } else {
+            userService.removeVerifyCodeFromCache(email);
+        }
+
+
+        User user = userService.getUserByEmail(email);
+        if (user == null) {
+            return CustomResponseFactory.error("用户不存在");
+        }
+
+        user.setPassword(newPassword);
+        userService.updateUser(user);
+        return CustomResponseFactory.success("密码修改成功");
+    }
 }
