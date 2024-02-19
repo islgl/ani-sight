@@ -8,12 +8,10 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 /**
- * Singleton class for JWT utility.
+ * @author lgl
  */
 @Component
 public class JwtUtil {
-
-    private static volatile JwtUtil instance;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -21,32 +19,14 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private int expiration;
 
-    private JwtUtil() {
-        // Private constructor to prevent instantiation.
-    }
-
-    /**
-     * Get the singleton instance of JwtUtil.
-     * @return The singleton instance of JwtUtil.
-     */
-    public static JwtUtil getInstance() {
-        if (instance == null) {
-            synchronized (JwtUtil.class) {
-                if (instance == null) {
-                    instance = new JwtUtil();
-                }
-            }
-        }
-        return instance;
-    }
-
-    // Generate JWT Token
-    public String generateToken(int uid) {
+    // 生成 JWT Token
+    public String generateToken(int uid, int role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(uid))
+                .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, secret)
@@ -66,6 +46,14 @@ public class JwtUtil {
                 .getSubject());
     }
 
+    public int extractRole(String token) {
+        return Integer.parseInt(Jwts.parser()
+                .setSigningKey(secret)
+                .parseClaimsJws(token)
+                .getBody()
+                .get("role").toString());
+    }
+
     private boolean isTokenExpired(String token) {
         Date expirationDate = Jwts.parser()
                 .setSigningKey(secret)
@@ -75,3 +63,5 @@ public class JwtUtil {
         return expirationDate.before(new Date());
     }
 }
+
+

@@ -352,7 +352,7 @@ public class UserController {
             return CustomResponseFactory.error("密码错误");
         }
 
-        String token = jwtUtil.generateToken(user.getUid());
+        String token = jwtUtil.generateToken(user.getUid(), user.getRole());
         Map<String, Object> userInfo = userService.user2Map(user, token);
         return CustomResponseFactory.success("Successfully login", userInfo);
     }
