@@ -281,6 +281,9 @@ public class UserController {
    */
   @GetMapping("/email-verify")
   public CustomResponse emailVerify(@RequestParam String email) {
+    if (email == null || email.isEmpty() || !userService.isEmailValid(email)) {
+      return CustomResponseFactory.error("Invalid email");
+    }
     String code = userService.sendVerifyCode(email);
     if (code == null) {
       return CustomResponseFactory.error("Failed to send email");
@@ -370,7 +373,7 @@ public class UserController {
     }
 
     if (!userService.checkPassword(password, user.getPassword())) {
-      
+
       return CustomResponseFactory.error("密码错误");
     }
 
