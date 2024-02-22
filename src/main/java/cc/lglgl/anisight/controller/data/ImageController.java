@@ -63,7 +63,8 @@ public class ImageController {
             Timestamp time = new Timestamp(System.currentTimeMillis());
             image.setTimestamp(time);
             imageService.addImage(image);
-            return CustomResponseFactory.success("Image uploaded", imageService.image2Map(image));
+            Image imageInDb = imageService.getImageByName(name);
+            return CustomResponseFactory.success("Image uploaded", imageService.image2Map(imageInDb));
         } catch (Exception e) {
             e.printStackTrace();
             return CustomResponseFactory.error("Failed to write image record");

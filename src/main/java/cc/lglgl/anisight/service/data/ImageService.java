@@ -3,9 +3,16 @@ package cc.lglgl.anisight.service.data;
 import cc.lglgl.anisight.domain.data.Image;
 import cc.lglgl.anisight.domain.data.ImageRepository;
 import cc.lglgl.anisight.utils.OssUtil;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,18 +28,16 @@ public class ImageService {
     @Autowired
     private final OssUtil ossUtil;
     private final String ossDir = "images/";
-    private final String ossUrl;
 
     public ImageService(ImageRepository imageRepository, OssUtil ossUtil) {
         this.imageRepository = imageRepository;
         this.ossUtil = ossUtil;
-        this.ossUrl = ossUtil.getUrl() + ossDir;
     }
 
     public List<Image> getImages() {
         List<Image> images = imageRepository.findAll();
         for (Image image : images) {
-            image.setName(ossUrl + image.getName());
+            image.setName(image.getName());
         }
         return images;
     }
@@ -40,7 +45,7 @@ public class ImageService {
     public Image getImageById(int id) {
         Image image = imageRepository.findById(id).orElse(null);
         if (image != null) {
-            image.setName(ossUrl + image.getName());
+            image.setName(image.getName());
         }
         return image;
     }
@@ -48,7 +53,7 @@ public class ImageService {
     public Image getImageByName(String name) {
         Image image = imageRepository.findByName(name);
         if (image != null) {
-            image.setName(ossUrl + image.getName());
+            image.setName(image.getName());
         }
         return image;
     }
@@ -56,7 +61,7 @@ public class ImageService {
     public List<Image> getImagesByUid(int uid) {
         List<Image> images = imageRepository.findAllByUid(uid);
         for (Image image : images) {
-            image.setName(ossUrl + image.getName());
+            image.setName(image.getName());
         }
         return images;
     }
@@ -68,7 +73,6 @@ public class ImageService {
     public boolean deleteImage(int id) {
         try {
             Image image = imageRepository.findById(id).orElse(null);
-            String name = null;
             if (image != null) {
                 imageRepository.deleteById(id);
                 return ossUtil.deleteImage(image.getName(), ossDir);
@@ -114,10 +118,9 @@ public class ImageService {
 
     public Map<String, Object> image2Map(Image image) {
         return Map.of(
-                "UID", image.getUid(),
-                "Filename", ossUrl + image.getName(),
-                "Timestamp", image.getTimestamp()
-        );
+                "id", image.getId(),
+                "uid", image.getUid(),
+                "filename", image.getName(),
+                "timestamp", image.getTimestamp());
     }
-
 }
