@@ -283,6 +283,7 @@ public class UserController {
   public CustomResponse emailVerify(@RequestParam String email) {
     if (email == null || email.isEmpty() || !userService.isEmailValid(email)) {
       return CustomResponseFactory.error("Invalid email");
+
     }
     String code = userService.sendVerifyCode(email);
     if (code == null) {
@@ -426,7 +427,7 @@ public class UserController {
   @GetMapping("/token-valid")
   public CustomResponse tokenValidate(@RequestHeader(value = "Authorization", required = false) String token,
       @RequestParam int uid) {
-    if (token == null) {
+    if (token == null || token.isEmpty()) {
       return CustomResponseFactory.error("Plase provide token in header");
     }
     if (jwtUtil.validateToken(token, uid)) {

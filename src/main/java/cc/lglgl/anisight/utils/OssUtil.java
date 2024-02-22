@@ -32,7 +32,7 @@ public class OssUtil {
     private final String url = "https://oss.lewisliugl.cn/";
 
     public OssUtil() {
-        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(System.getenv("OSS_ACCESS_KEY_ID"), System.getenv("OSS_ACCESS_KEY_SECRET"));
+        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(System.getenv("ALIYUN_ACCESS_KEY_ID"), System.getenv("ALIYUN_ACCESS_KEY_SECRET"));
         ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
         clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
         ossClient = OSSClientBuilder.create()

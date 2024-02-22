@@ -4,11 +4,14 @@ import cc.lglgl.anisight.domain.data.Image;
 import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.data.ImageService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
+import cc.lglgl.anisight.utils.JwtUtil;
+import cc.lglgl.anisight.utils.StsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author lgl
@@ -19,6 +22,12 @@ public class ImageController {
     @Autowired
     private final ImageService imageService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private StsUtil stsUtil;
+
     public ImageController(ImageService imageService) {
         this.imageService = imageService;
     }
@@ -26,8 +35,7 @@ public class ImageController {
     @GetMapping
     public CustomResponse getImages(
             @RequestParam(value = "id", required = false) Integer id,
-            @RequestParam(value = "uid", required = false) Integer uid
-    ) {
+            @RequestParam(value = "uid", required = false) Integer uid) {
         List<Image> images = null;
 
         if (id != null) {
@@ -46,16 +54,43 @@ public class ImageController {
         }
     }
 
-
     @PostMapping
     public CustomResponse uploadImage(@RequestParam("uid") int uid, @RequestParam("name") String name) {
-        Image image = new Image();
-        image.setUid(uid);
-        image.setName(name);
-        // 获取当前时间
-        Timestamp time = new Timestamp(System.currentTimeMillis());
-        image.setTimestamp(time);
-        imageService.addImage(image);
-        return CustomResponseFactory.success("Image uploaded", imageService.image2Map(image));
+        try {
+            Image image = new Image();
+            image.setUid(uid);
+            image.setName(name);
+            Timestamp time = new Timestamp(System.currentTimeMillis());
+            image.setTimestamp(time);
+            imageService.addImage(image);
+            return CustomResponseFactory.success("Image uploaded", imageService.image2Map(image));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CustomResponseFactory.error("Failed to write image record");
+        }
+    }
+
+    /**
+     * 获取阿里云OSS的临时凭证
+     *
+     * @return
+     */
+    @GetMapping("/sts-credentials")
+    public CustomResponse getCredentials(@RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam("uid") int uid) {
+        if (token == null || token.isEmpty()) {
+            return CustomResponseFactory.error("Please provide a token");
+        }
+        if (!jwtUtil.validateToken(token, uid)) {
+            return CustomResponseFactory.error("Invalid token");
+        }
+        try {
+            Map<String, String> credentials = stsUtil.getStsCredential(String.valueOf(uid));
+            return CustomResponseFactory.success("STS credentials obtained", credentials);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CustomResponseFactory.error("Failed to get STS credentials");
+        }
+
     }
 }
