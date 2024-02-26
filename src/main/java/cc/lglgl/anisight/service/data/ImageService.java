@@ -3,16 +3,9 @@ package cc.lglgl.anisight.service.data;
 import cc.lglgl.anisight.domain.data.Image;
 import cc.lglgl.anisight.domain.data.ImageRepository;
 import cc.lglgl.anisight.utils.OssUtil;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

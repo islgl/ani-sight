@@ -3,6 +3,7 @@ package cc.lglgl.anisight.service.user;
 import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.domain.user.UserRepository;
 import cc.lglgl.anisight.utils.EmailUtil;
+import cc.lglgl.anisight.utils.OssUtil;
 import cc.lglgl.anisight.utils.UidUtil;
 import com.aliyun.dm20151123.models.SingleSendMailResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +68,6 @@ public class UserService {
         return user;
     }
 
-
     public List<User> getUsersByRole(int role) {
         return userRepository.findAllByRole(role);
     }
@@ -97,7 +97,6 @@ public class UserService {
         User user = userRepository.findByUid(uid);
         userRepository.delete(user);
     }
-
 
     public void deleteUsers() {
         // 清理所有缓存
@@ -137,19 +136,17 @@ public class UserService {
                 "username", user.getUsername(),
                 "email", user.getEmail(),
                 "role", user.getRole() == 0 ? "User" : "Administrator",
-                "avatar", user.getAvatar()
-        );
+                "avatar", user.getAvatar());
     }
 
-    public Map<String,Object> user2Map(User user,String token){
+    public Map<String, Object> user2Map(User user, String token) {
         return Map.of(
                 "uid", user.getUid(),
                 "username", user.getUsername(),
                 "email", user.getEmail(),
                 "role", user.getRole() == 0 ? "User" : "Administrator",
                 "avatar", user.getAvatar(),
-                "token", token
-        );
+                "token", token);
     }
 
     public Object getUserField(User user, String field) {
@@ -187,8 +184,7 @@ public class UserService {
                     0,
                     email,
                     "AniSight 邮箱验证",
-                    "欢迎使用AniSight！您的验证码是：" + code + "。验证码有效期为5分钟。"
-            );
+                    "欢迎使用AniSight！您的验证码是：" + code + "。验证码有效期为5分钟。");
             if (response != null) {
                 return code;
             } else {
@@ -224,6 +220,17 @@ public class UserService {
 
     public boolean checkPassword(String password, String encodedPassword) {
         return passwordEncoder.matches(password, encodedPassword);
+    }
+
+    public String getAvatarUrl(int uid) {
+        try{
+            List<String> images=new OssUtil().listImages("avatar",String.valueOf(uid));
+            String imageName=images.get(0);
+            String avatarUrl=new OssUtil().getImgUrl(imageName);
+            return avatarUrl;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

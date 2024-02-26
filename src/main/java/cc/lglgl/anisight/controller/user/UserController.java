@@ -6,6 +6,7 @@ import cc.lglgl.anisight.service.user.UserService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
 import cc.lglgl.anisight.utils.JwtUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -378,8 +379,13 @@ public class UserController {
       return CustomResponseFactory.error("密码错误");
     }
 
+    String avatarUrl = userService.getAvatarUrl(user.getUid());
+    if (avatarUrl != null) {
+      user.setAvatar(avatarUrl);
+    }
     String token = jwtUtil.generateToken(user.getUid(), user.getRole());
     Map<String, Object> userInfo = userService.user2Map(user, token);
+
     return CustomResponseFactory.success("Successfully login", userInfo);
   }
 

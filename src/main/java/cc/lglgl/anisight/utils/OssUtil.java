@@ -12,11 +12,12 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-
 
 /**
  * @author lgl
@@ -32,7 +33,8 @@ public class OssUtil {
     private final String url = "https://oss.lewisliugl.cn/";
 
     public OssUtil() {
-        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(System.getenv("ALIYUN_ACCESS_KEY_ID"), System.getenv("ALIYUN_ACCESS_KEY_SECRET"));
+        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(System.getenv("ALIYUN_ACCESS_KEY_ID"),
+                System.getenv("ALIYUN_ACCESS_KEY_SECRET"));
         ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
         clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
         ossClient = OSSClientBuilder.create()
@@ -93,7 +95,8 @@ public class OssUtil {
     public boolean deleteImages(List<String> filenames, String dir) {
         filenames.replaceAll(s -> dir + s);
         try {
-            DeleteObjectsResult deleteObjectsResult = ossClient.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(filenames).withEncodingType("url"));
+            DeleteObjectsResult deleteObjectsResult = ossClient
+                    .deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(filenames).withEncodingType("url"));
             List<String> deletedObjects = deleteObjectsResult.getDeletedObjects();
             return deletedObjects.size() == filenames.size();
         } catch (Exception e) {
@@ -131,7 +134,8 @@ public class OssUtil {
                     if (keys.isEmpty()) {
                         return true;
                     }
-                    DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucketName).withKeys(keys).withEncodingType("url");
+                    DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucketName).withKeys(keys)
+                            .withEncodingType("url");
                     DeleteObjectsResult deleteObjectsResult = ossClient.deleteObjects(deleteObjectsRequest);
                     List<String> deletedObjects = deleteObjectsResult.getDeletedObjects();
                     try {
@@ -151,5 +155,28 @@ public class OssUtil {
             return false;
         }
     }
-}
 
+    public String getImgUrl(String filename) {
+        try {
+            Date expiration = new Date(new Date().getTime() + 600 * 1000L);
+            URL imgUrl = ossClient.generatePresignedUrl(bucketName, filename, expiration);
+            return imgUrl.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public List<String> listImages(String dir, String prefix) {
+        try {
+            ListObjectsV2Result result = ossClient.listObjectsV2(bucketName, dir + "/" + prefix);
+            List<OSSObjectSummary> sums = result.getObjectSummaries();
+            List<String> filenames = new ArrayList<>();
+            for (OSSObjectSummary s : sums) {
+                filenames.add(s.getKey());
+            }
+            return filenames;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}
