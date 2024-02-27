@@ -178,12 +178,10 @@ public class UserController {
   public CustomResponse updateUserField(
       @PathVariable int uid,
       @PathVariable String field,
-      @RequestBody String value) {
+      @RequestBody Map<String, String> data) {
 
     User user = userService.getUserByUid(uid);
-    // raw 格式传入时带有引号，需要去掉
-    value = value.substring(1, value.length() - 1);
-
+    String value = data.get("value");
 
     if (user == null) {
       return CustomResponseFactory.error("No user found");
@@ -208,12 +206,29 @@ public class UserController {
           user.setPassword(value);
           break;
         case "email":
+          String verifyCode = data.get("verifyCode");
+          if (verifyCode == null || verifyCode.isEmpty()) {
+            return CustomResponseFactory.error("请输入验证码");
+          }
           if (userService.getUserByEmail(value) != null) {
             return CustomResponseFactory.error("邮箱已存在");
           }
           if (!userService.isEmailValid(value)) {
             return CustomResponseFactory.error("邮箱格式不正确");
           }
+          // TODO: 特权验证码，实际上线记得删除！
+          if (!verifyCode.equals("admincode")) {
+            // 验证码检查
+            String trueCode = userService.getVerifyCodeFromCache(value);
+            if (trueCode == null) {
+              return CustomResponseFactory.error("验证码失效");
+            } else if (!trueCode.equals(verifyCode)) {
+              return CustomResponseFactory.error("验证码错误");
+            } else {
+              userService.removeVerifyCodeFromCache(value);
+            }
+          }
+
           user.setEmail(value);
           break;
         case "role":
@@ -227,12 +242,14 @@ public class UserController {
           if (value == null || value.isEmpty()) {
             return CustomResponseFactory.error("Please provide avatar filename");
           }
-          
-          // 删除 OSS 上的旧头像
-          boolean deleteFlag = userService.deleteAvatar(user.getAvatar());
-          if (!deleteFlag) {
-            System.out.println("Failed to delete old avatar");
-            return CustomResponseFactory.error("头像更新失败");
+
+          // 如果图片类型不同，删除 OSS 上的旧头像
+          if (user.getAvatar() != null && !user.getAvatar().equals(value)) {
+            boolean deleteFlag = userService.deleteAvatar(user.getAvatar());
+            if (!deleteFlag) {
+              System.out.println("Failed to delete old avatar");
+              return CustomResponseFactory.error("头像更新失败");
+            }
           }
 
           user.setAvatar(value);

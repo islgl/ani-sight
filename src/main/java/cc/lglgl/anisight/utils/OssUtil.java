@@ -158,7 +158,7 @@ public class OssUtil {
 
     public String getImgUrl(String filename) {
         try {
-            Date expiration = new Date(System.currentTimeMillis() + 600 * 1000L);
+            Date expiration = new Date(System.currentTimeMillis() + 1800 * 1000L);
             URL imgUrl = ossClient.generatePresignedUrl(bucketName, filename, expiration);
             return imgUrl.toString();
         } catch (Exception e) {
