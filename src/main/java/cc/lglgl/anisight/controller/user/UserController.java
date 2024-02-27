@@ -480,4 +480,61 @@ public class UserController {
       return CustomResponseFactory.error("Token is invalid");
     }
   }
+
+  @DeleteMapping("/signout")
+  public CustomResponse signOut(@RequestParam(value = "uid") int uid,
+      @RequestParam(value = "verifyCode") String verifyCode) {
+    if (verifyCode == null || verifyCode.isEmpty()) {
+      return CustomResponseFactory.error("请输入验证码");
+    }
+    User user = userService.getUserByUid(uid);
+    // TODO: 特权验证码，实际上线记得删除！
+    if (!verifyCode.equals("admincode")) {
+      // 验证码检查
+      String trueCode = userService.getVerifyCodeFromCache(user.getEmail());
+      if (trueCode == null) {
+        return CustomResponseFactory.error("验证码失效");
+      } else if (!trueCode.equals(verifyCode)) {
+        return CustomResponseFactory.error("验证码错误");
+      } else {
+        userService.removeVerifyCodeFromCache(user.getEmail());
+      }
+    }
+    if (userService.getUserByUid(uid) == null) {
+      return CustomResponseFactory.error("No user found");
+    }
+    userService.deleteUserByUid(uid);
+    return CustomResponseFactory.success("Successfully deleted user uid = " + uid);
+  }
+
+  @PutMapping("/update-pwd")
+  public CustomResponse updatePwd(@RequestParam(value = "uid") int uid,
+      @RequestParam(value = "oldPwd") String oldPwd,
+      @RequestParam(value = "newPwd") String newPwd,
+      @RequestParam(value = "confirmPwd") String confirmPwd) {
+        System.out.println("updatePwd request received: UID = " + uid);
+    if (oldPwd == null || oldPwd.isEmpty() || newPwd == null || newPwd.isEmpty() || confirmPwd == null
+        || confirmPwd.isEmpty()) {
+      return CustomResponseFactory.error("密码不能为空");
+    }
+    if (!newPwd.equals(confirmPwd)) {
+      return CustomResponseFactory.error("两次输入密码不一致");
+    }
+    User user = userService.getUserByUid(uid);
+    if (user == null) {
+      return CustomResponseFactory.error("No user found");
+    }
+    if (!userService.checkPassword(oldPwd, user.getPassword())) {
+      return CustomResponseFactory.error("旧密码错误");
+    }
+    if (oldPwd.equals(newPwd)) {
+      return CustomResponseFactory.error("新密码不能与旧密码相同");
+    }
+    if (newPwd.length() < 6 || newPwd.length() > 16) {
+      return CustomResponseFactory.error("密码长度应在6-16位之间");
+    }
+    user.setPassword(userService.encPassword(newPwd));
+    userService.updateUser(user);
+    return CustomResponseFactory.success("密码修改成功", userService.user2Map(user));
+  }
 }
