@@ -158,7 +158,7 @@ public class OssUtil {
 
     public String getImgUrl(String filename) {
         try {
-            Date expiration = new Date(new Date().getTime() + 600 * 1000L);
+            Date expiration = new Date(System.currentTimeMillis() + 600 * 1000L);
             URL imgUrl = ossClient.generatePresignedUrl(bucketName, filename, expiration);
             return imgUrl.toString();
         } catch (Exception e) {
@@ -166,9 +166,9 @@ public class OssUtil {
         }
     }
 
-    public List<String> listImages(String dir, String prefix) {
+    public List<String> listImages(String prefix) {
         try {
-            ListObjectsV2Result result = ossClient.listObjectsV2(bucketName, dir + "/" + prefix);
+            ListObjectsV2Result result = ossClient.listObjectsV2(bucketName, prefix);
             List<OSSObjectSummary> sums = result.getObjectSummaries();
             List<String> filenames = new ArrayList<>();
             for (OSSObjectSummary s : sums) {

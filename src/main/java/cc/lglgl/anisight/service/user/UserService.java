@@ -2,6 +2,7 @@ package cc.lglgl.anisight.service.user;
 
 import cc.lglgl.anisight.domain.user.User;
 import cc.lglgl.anisight.domain.user.UserRepository;
+import cc.lglgl.anisight.manager.OssUtilManager;
 import cc.lglgl.anisight.utils.EmailUtil;
 import cc.lglgl.anisight.utils.OssUtil;
 import cc.lglgl.anisight.utils.UidUtil;
@@ -31,6 +32,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private OssUtilManager ossUtilManager;
 
     @Qualifier("verifyCodeCacheManager")
     @Autowired
@@ -88,7 +92,6 @@ public class UserService {
     // Update
     @CachePut(value = "USER", key = "#user.uid", unless = "#result==null")
     public User updateUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
@@ -222,15 +225,23 @@ public class UserService {
         return passwordEncoder.matches(password, encodedPassword);
     }
 
-    public String getAvatarUrl(int uid) {
-        try{
-            List<String> images=new OssUtil().listImages("avatar",String.valueOf(uid));
-            String imageName=images.get(0);
-            String avatarUrl=new OssUtil().getImgUrl(imageName);
+    public String getAvatarUrl(String filename) {
+        try {
+            List<String> images = ossUtilManager.getOssUtil().listImages("avatar/" + filename);
+            String imageName = images.get(0);
+            String avatarUrl = ossUtilManager.getOssUtil().getImgUrl(imageName);
             return avatarUrl;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public String encPassword(String password) {
+        return passwordEncoder.encode(password);
+    }
+
+    public boolean deleteAvatar(String filename) {
+        return ossUtilManager.getOssUtil().deleteImage(filename, "avatar/");
     }
 
 }

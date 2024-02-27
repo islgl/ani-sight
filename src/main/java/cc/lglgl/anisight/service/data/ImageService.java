@@ -2,7 +2,7 @@ package cc.lglgl.anisight.service.data;
 
 import cc.lglgl.anisight.domain.data.Image;
 import cc.lglgl.anisight.domain.data.ImageRepository;
-import cc.lglgl.anisight.utils.OssUtil;
+import cc.lglgl.anisight.manager.OssUtilManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +19,12 @@ public class ImageService {
     private final ImageRepository imageRepository;
 
     @Autowired
-    private final OssUtil ossUtil;
+    private final OssUtilManager ossUtilManager;
     private final String ossDir = "images/";
 
-    public ImageService(ImageRepository imageRepository, OssUtil ossUtil) {
+    public ImageService(ImageRepository imageRepository, OssUtilManager ossUtilManager) {
         this.imageRepository = imageRepository;
-        this.ossUtil = ossUtil;
+        this.ossUtilManager = ossUtilManager;
     }
 
     public List<Image> getImages() {
@@ -68,25 +68,21 @@ public class ImageService {
             Image image = imageRepository.findById(id).orElse(null);
             if (image != null) {
                 imageRepository.deleteById(id);
-                return ossUtil.deleteImage(image.getName(), ossDir);
+                return ossUtilManager.getOssUtil().deleteImage(image.getName(), ossDir);
             } else {
                 return false;
             }
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
         }
     }
 
     public boolean deleteAllImages() {
         try {
             imageRepository.deleteAll();
-            return ossUtil.deleteAllImages(ossDir);
+            return ossUtilManager.getOssUtil().deleteAllImages(ossDir);
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
         }
     }
 
@@ -101,11 +97,9 @@ public class ImageService {
             }
 
             imageRepository.deleteAllById(ids);
-            return ossUtil.deleteImages(names, ossDir);
+            return ossUtilManager.getOssUtil().deleteImages(names, ossDir);
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
         }
     }
 

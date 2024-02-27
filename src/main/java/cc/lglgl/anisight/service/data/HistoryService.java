@@ -2,6 +2,7 @@ package cc.lglgl.anisight.service.data;
 
 import cc.lglgl.anisight.domain.data.History;
 import cc.lglgl.anisight.domain.data.HistoryRepository;
+import cc.lglgl.anisight.manager.OssUtilManager;
 import cc.lglgl.anisight.utils.OssUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,16 +18,17 @@ public class HistoryService {
     private final HistoryRepository historyRepository;
 
     @Autowired
-    private final OssUtil ossUtil;
+    private final OssUtilManager ossUtilManager;
     private final String masksDir = "masks/";
     private final String labelsDir = "labels/";
 
     private final String masksUrl;
     private final String labelsUrl;
 
-    public HistoryService(HistoryRepository historyRepository, OssUtil ossUtil) {
+    public HistoryService(HistoryRepository historyRepository, OssUtilManager ossUtilManager) {
         this.historyRepository = historyRepository;
-        this.ossUtil = ossUtil;
+        this.ossUtilManager = ossUtilManager;
+        OssUtil ossUtil = ossUtilManager.getOssUtil();
         this.masksUrl = ossUtil.getUrl() + masksDir;
         this.labelsUrl = ossUtil.getUrl() + labelsDir;
     }
@@ -86,6 +88,7 @@ public class HistoryService {
         try {
             History history = historyRepository.findById(id).orElse(null);
             if (history != null) {
+                OssUtil ossUtil = ossUtilManager.getOssUtil();
                 ossUtil.deleteImage(history.getMask(), masksDir);
                 ossUtil.deleteImage(history.getLabel(), labelsDir);
                 historyRepository.deleteById(id);
@@ -95,22 +98,19 @@ public class HistoryService {
             }
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
         }
     }
 
     public boolean deleteAllHistories() {
         try {
+            OssUtil ossUtil = ossUtilManager.getOssUtil();
             ossUtil.deleteAllImages(masksDir);
             ossUtil.deleteAllImages(labelsDir);
             historyRepository.deleteAll();
             return true;
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
-        }
+        } 
     }
 
     public boolean deleteHistoriesByUid(int uid) {
@@ -126,14 +126,13 @@ public class HistoryService {
                 labels.add(history.getLabel());
             }
 
+            OssUtil ossUtil = ossUtilManager.getOssUtil();
             ossUtil.deleteImages(masks, masksDir);
             ossUtil.deleteImages(labels, labelsDir);
             historyRepository.deleteAllById(ids);
             return true;
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
         }
     }
 
@@ -141,6 +140,7 @@ public class HistoryService {
         try {
             History history = historyRepository.findByImageId(imageId);
             if (history != null) {
+                OssUtil ossUtil = ossUtilManager.getOssUtil();
                 ossUtil.deleteImage(history.getMask(), masksDir);
                 ossUtil.deleteImage(history.getLabel(), labelsDir);
                 historyRepository.deleteById(history.getId());
@@ -150,8 +150,6 @@ public class HistoryService {
             }
         } catch (Exception e) {
             return false;
-        } finally {
-            ossUtil.shutdown();
         }
     }
 
@@ -163,7 +161,6 @@ public class HistoryService {
                 "Mask", history.getMask(),
                 "Label", history.getLabel(),
                 "BBoxes", history.getBboxes(),
-                "Caption", history.getCaption()
-        );
+                "Caption", history.getCaption());
     }
 }

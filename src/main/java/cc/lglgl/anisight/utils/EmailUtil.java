@@ -14,8 +14,8 @@ import com.aliyun.teautil.models.RuntimeOptions;
 public class EmailUtil {
     private static Client createClient() throws Exception {
         Config config = new com.aliyun.teaopenapi.models.Config()
-                .setAccessKeyId(System.getenv("OSS_ACCESS_KEY_ID"))
-                .setAccessKeySecret(System.getenv("OSS_ACCESS_KEY_SECRET"));
+                .setAccessKeyId(System.getenv("ALIYUN_ACCESS_KEY_ID"))
+                .setAccessKeySecret(System.getenv("ALIYUN_ACCESS_KEY_SECRET"));
         config.endpoint = "dm.aliyuncs.com";
         return new Client(config);
     }

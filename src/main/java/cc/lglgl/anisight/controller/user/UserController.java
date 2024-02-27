@@ -179,7 +179,11 @@ public class UserController {
       @PathVariable int uid,
       @PathVariable String field,
       @RequestBody String value) {
+
     User user = userService.getUserByUid(uid);
+    // raw 格式传入时带有引号，需要去掉
+    value = value.substring(1, value.length() - 1);
+
 
     if (user == null) {
       return CustomResponseFactory.error("No user found");
@@ -213,15 +217,29 @@ public class UserController {
           user.setEmail(value);
           break;
         case "role":
+          int roleCode = Integer.parseInt(value);
+          if (roleCode != 0 || roleCode != 1) {
+            return CustomResponseFactory.error("Invalid role code");
+          }
           user.setRole(Integer.parseInt(value));
           break;
         case "avatar":
+          if (value == null || value.isEmpty()) {
+            return CustomResponseFactory.error("Please provide avatar filename");
+          }
+          
+          // 删除 OSS 上的旧头像
+          boolean deleteFlag = userService.deleteAvatar(user.getAvatar());
+          if (!deleteFlag) {
+            System.out.println("Failed to delete old avatar");
+            return CustomResponseFactory.error("头像更新失败");
+          }
+
           user.setAvatar(value);
           break;
         default:
           return CustomResponseFactory.error("Invalid field name");
       }
-      System.out.println(user);
       userService.updateUser(user);
       return CustomResponseFactory.success(
           "Successfully updated user",
@@ -379,7 +397,7 @@ public class UserController {
       return CustomResponseFactory.error("密码错误");
     }
 
-    String avatarUrl = userService.getAvatarUrl(user.getUid());
+    String avatarUrl = userService.getAvatarUrl(user.getAvatar());
     if (avatarUrl != null) {
       user.setAvatar(avatarUrl);
     }
@@ -411,13 +429,16 @@ public class UserController {
     }
 
     // 验证码检查
-    String trueCode = userService.getVerifyCodeFromCache(email);
-    if (trueCode == null) {
-      return CustomResponseFactory.error("验证码失效");
-    } else if (!trueCode.equals(verifyCode)) {
-      return CustomResponseFactory.error("验证码错误");
-    } else {
-      userService.removeVerifyCodeFromCache(email);
+    // TODO: 特权验证码，实际上线记得删除！
+    if (!verifyCode.equals("admincode")) {
+      String trueCode = userService.getVerifyCodeFromCache(email);
+      if (trueCode == null) {
+        return CustomResponseFactory.error("验证码失效");
+      } else if (!trueCode.equals(verifyCode)) {
+        return CustomResponseFactory.error("验证码错误");
+      } else {
+        userService.removeVerifyCodeFromCache(email);
+      }
     }
 
     User user = userService.getUserByEmail(email);
@@ -425,7 +446,7 @@ public class UserController {
       return CustomResponseFactory.error("用户不存在");
     }
 
-    user.setPassword(newPassword);
+    user.setPassword(userService.encPassword(newPassword));
     userService.updateUser(user);
     return CustomResponseFactory.success("密码修改成功");
   }
