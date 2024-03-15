@@ -227,9 +227,7 @@ public class UserService {
 
     public String getAvatarUrl(String filename) {
         try {
-            List<String> images = ossUtilManager.getOssUtil().listImages("avatar/" + filename);
-            String imageName = images.get(0);
-            String avatarUrl = ossUtilManager.getOssUtil().getImgUrl(imageName);
+            String avatarUrl = ossUtilManager.getOssUtil().getImgUrl("avatar/" + filename);
             return avatarUrl;
         } catch (Exception e) {
             return null;
