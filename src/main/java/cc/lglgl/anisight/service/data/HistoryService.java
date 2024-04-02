@@ -18,19 +18,18 @@ public class HistoryService {
     private final HistoryRepository historyRepository;
 
     @Autowired
+    private final ImageService imageService;
+
+    @Autowired
     private final OssUtilManager ossUtilManager;
     private final String masksDir = "masks/";
     private final String labelsDir = "labels/";
 
-    private final String masksUrl;
-    private final String labelsUrl;
-
-    public HistoryService(HistoryRepository historyRepository, OssUtilManager ossUtilManager) {
+    public HistoryService(HistoryRepository historyRepository, ImageService imageService,
+                          OssUtilManager ossUtilManager) {
         this.historyRepository = historyRepository;
+        this.imageService = imageService;
         this.ossUtilManager = ossUtilManager;
-        OssUtil ossUtil = ossUtilManager.getOssUtil();
-        this.masksUrl = ossUtil.getUrl() + masksDir;
-        this.labelsUrl = ossUtil.getUrl() + labelsDir;
     }
 
     public History addHistory(History history) {
@@ -41,47 +40,24 @@ public class HistoryService {
         History history = new History(Integer.parseInt(info.get("uid")),
                 Integer.parseInt(info.get("imageId")),
                 new Timestamp(System.currentTimeMillis()),
-                info.get("mask"),
-                info.get("label"),
-                info.get("bboxes"),
                 info.get("caption"));
         return historyRepository.save(history);
     }
 
     public List<History> getHistories() {
-        List<History> histories = historyRepository.findAll();
-        for (History history : histories) {
-            history.setMask(masksUrl + history.getMask());
-            history.setLabel(labelsUrl + history.getLabel());
-        }
-        return histories;
+        return historyRepository.findAll();
     }
 
     public History getHistoryById(int id) {
-        History history = historyRepository.findById(id).orElse(null);
-        if (history != null) {
-            history.setMask(masksUrl + history.getMask());
-            history.setLabel(labelsUrl + history.getLabel());
-        }
-        return history;
+        return historyRepository.findById(id).orElse(null);
     }
 
     public List<History> getHistoriesByUid(int uid) {
-        List<History> histories = historyRepository.findAllByUid(uid);
-        for (History history : histories) {
-            history.setMask(masksUrl + history.getMask());
-            history.setLabel(labelsUrl + history.getLabel());
-        }
-        return histories;
+        return historyRepository.findAllByUid(uid);
     }
 
     public History getHistoryByImageId(int imageId) {
-        History history = historyRepository.findByImageId(imageId);
-        if (history != null) {
-            history.setMask(masksUrl + history.getMask());
-            history.setLabel(labelsUrl + history.getLabel());
-        }
-        return history;
+        return historyRepository.findByImageId(imageId);
     }
 
     public boolean deleteHistory(int id) {
@@ -89,13 +65,26 @@ public class HistoryService {
             History history = historyRepository.findById(id).orElse(null);
             if (history != null) {
                 OssUtil ossUtil = ossUtilManager.getOssUtil();
-                ossUtil.deleteImage(history.getMask(), masksDir);
-                ossUtil.deleteImage(history.getLabel(), labelsDir);
+                String label = imageService.getImageById(history.getImageId()).getName();
+                String mask = label.replace(".jpg", ".png");
+                ossUtil.deleteImage(mask, masksDir);
+                ossUtil.deleteImage(label, labelsDir);
                 historyRepository.deleteById(id);
                 return true;
             } else {
                 return false;
             }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean deleteHistories(List<Integer> ids) {
+        try {
+            for (int id : ids) {
+                deleteHistory(id);
+            }
+            return true;
         } catch (Exception e) {
             return false;
         }
@@ -110,7 +99,7 @@ public class HistoryService {
             return true;
         } catch (Exception e) {
             return false;
-        } 
+        }
     }
 
     public boolean deleteHistoriesByUid(int uid) {
@@ -122,10 +111,11 @@ public class HistoryService {
 
             for (History history : histories) {
                 ids.add(history.getId());
-                masks.add(history.getMask());
-                labels.add(history.getLabel());
+                String label = imageService.getImageById(history.getImageId()).getName();
+                String mask = label.replace(".jpg", ".png");
+                masks.add(mask);
+                labels.add(label);
             }
-
             OssUtil ossUtil = ossUtilManager.getOssUtil();
             ossUtil.deleteImages(masks, masksDir);
             ossUtil.deleteImages(labels, labelsDir);
@@ -141,9 +131,41 @@ public class HistoryService {
             History history = historyRepository.findByImageId(imageId);
             if (history != null) {
                 OssUtil ossUtil = ossUtilManager.getOssUtil();
-                ossUtil.deleteImage(history.getMask(), masksDir);
-                ossUtil.deleteImage(history.getLabel(), labelsDir);
+                String label = imageService.getImageById(history.getImageId()).getName();
+                String mask = label.replace(".jpg", ".png");
+                ossUtil.deleteImage(mask, masksDir);
+                ossUtil.deleteImage(label, labelsDir);
                 historyRepository.deleteById(history.getId());
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean starHistories(List<Integer> ids,int star) {
+        try {
+            for (int id : ids) {
+                History history = historyRepository.findById(id).orElse(null);
+                if (history != null) {
+                    history.setStar(star);
+                    historyRepository.save(history);
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean starHistory(int id, int star) {
+        try {
+            History history = historyRepository.findById(id).orElse(null);
+            if (history != null) {
+                history.setStar(star);
+                historyRepository.save(history);
                 return true;
             } else {
                 return false;
@@ -158,9 +180,6 @@ public class HistoryService {
                 "UID", history.getUid(),
                 "Image ID", history.getImageId(),
                 "Time", history.getTimestamp(),
-                "Mask", history.getMask(),
-                "Label", history.getLabel(),
-                "BBoxes", history.getBboxes(),
                 "Caption", history.getCaption());
     }
 }

@@ -20,26 +20,23 @@ public class History {
     @Id
     private int id;
     private int uid;
-    // 是否收藏
-    private int star;
+    private int star=0;
     private int imageId;
     private Timestamp timestamp;
-    // 掩码图片的OSS路径
-    private String mask;
-    // 带标注图片的OSS路径
-    private String label;
-    // 边界框CSV文件的OSS路径
-    private String bboxes;
-    // 图像文本描述
     private String caption;
 
-    public History(int userId, int imageId, Timestamp timestamp, String mask, String label, String bboxes, String caption) {
-        this.uid = userId;
+
+    public History(int uid, int imageId, Timestamp timestamp, String caption) {
+        this.uid = uid;
         this.imageId = imageId;
         this.timestamp = timestamp;
-        this.mask = mask;
-        this.label = label;
-        this.bboxes = bboxes;
+        this.caption = caption;
+    }
+
+    public History(int uid, int imageId, String caption) {
+        this.uid = uid;
+        this.imageId = imageId;
+        this.timestamp = new Timestamp(System.currentTimeMillis());
         this.caption = caption;
     }
 }
