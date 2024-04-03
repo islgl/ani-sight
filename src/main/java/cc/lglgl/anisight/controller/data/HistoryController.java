@@ -58,7 +58,7 @@ public class HistoryController {
             int imageId = imageService.getImageByName(imageName).getId();
             History history = new History(uid, imageId, caption);
             historyService.addHistory(history);
-            return CustomResponseFactory.success("History added", history);
+            return CustomResponseFactory.success("History added", historyService.history2Map(history));
         } catch (Exception e) {
             return CustomResponseFactory.error("Failed to add history");
         }
