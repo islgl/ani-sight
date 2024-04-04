@@ -13,6 +13,6 @@ public interface HistoryRepository extends JpaRepository<History, Integer> {
     @SuppressWarnings("null")
     List<History> findAll();
     List<History> findAllByUid(int uid);
-    History findByImageId(int imageId);
+    History findByImageName(String imageName);
     
 }

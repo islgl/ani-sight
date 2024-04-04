@@ -5,12 +5,11 @@ import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.data.HistoryService;
 import cc.lglgl.anisight.service.data.ImageService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
-
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/histories")
@@ -55,10 +54,10 @@ public class HistoryController {
     public CustomResponse addHistory(
             @RequestParam("uid") int uid,
             @RequestParam("image") String imageName,
-            @RequestParam("caption") String caption) {
+            @RequestParam("caption") String caption,
+            @RequestParam("species") String species) {
         try {
-            int imageId = imageService.getImageByName(imageName).getId();
-            History history = new History(uid, imageId, caption);
+            History history = new History(uid, imageName, caption, species);
             historyService.addHistory(history);
             return CustomResponseFactory.success("History added", historyService.history2Map(history));
         } catch (Exception e) {
@@ -67,7 +66,7 @@ public class HistoryController {
     }
 
     @DeleteMapping
-    public CustomResponse deleteHistories(@RequestParam(value="ids",required = false) List<Integer> ids) {
+    public CustomResponse deleteHistories(@RequestParam(value = "ids", required = false) List<Integer> ids) {
         try {
             if (ids == null || ids.isEmpty()) {
                 historyService.deleteAllHistories();
@@ -106,7 +105,7 @@ public class HistoryController {
 
     @PutMapping("/{id}")
     public CustomResponse updateHistory(@PathVariable("id") int id,
-            @RequestParam("star") int star) {
+                                        @RequestParam("star") int star) {
         try {
             historyService.starHistory(id, star);
             return CustomResponseFactory.success("History updated");
@@ -114,15 +113,6 @@ public class HistoryController {
             return CustomResponseFactory.error("Failed to update history");
         }
     }
-    
-    @GetMapping("/count")
-    public CustomResponse getHistoriesCount() {
-        try {
-            Map<String,Integer> count = historyService.countHistories();
-            return CustomResponseFactory.success("Histories count", count);
-        } catch (Exception e) {
-            return CustomResponseFactory.error("Failed to get histories count");
-        }
-    }
+
 
 }

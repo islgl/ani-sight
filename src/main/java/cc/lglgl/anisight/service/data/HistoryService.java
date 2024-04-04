@@ -7,7 +7,6 @@ import cc.lglgl.anisight.utils.OssUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ public class HistoryService {
     private final String labelsDir = "labels/";
 
     public HistoryService(HistoryRepository historyRepository, ImageService imageService,
-            OssUtilManager ossUtilManager) {
+                          OssUtilManager ossUtilManager) {
         this.historyRepository = historyRepository;
         this.imageService = imageService;
         this.ossUtilManager = ossUtilManager;
@@ -36,13 +35,6 @@ public class HistoryService {
         return historyRepository.save(history);
     }
 
-    public History addHistory(Map<String, String> info) {
-        History history = new History(Integer.parseInt(info.get("uid")),
-                Integer.parseInt(info.get("imageId")),
-                new Timestamp(System.currentTimeMillis()),
-                info.get("caption"));
-        return historyRepository.save(history);
-    }
 
     public List<History> getHistories() {
         return historyRepository.findAll();
@@ -56,16 +48,12 @@ public class HistoryService {
         return historyRepository.findAllByUid(uid);
     }
 
-    public History getHistoryByImageId(int imageId) {
-        return historyRepository.findByImageId(imageId);
-    }
-
     public boolean deleteHistory(int id) {
         try {
             History history = historyRepository.findById(id).orElse(null);
             if (history != null) {
                 OssUtil ossUtil = ossUtilManager.getOssUtil();
-                String label = imageService.getImageById(history.getImageId()).getName();
+                String label = history.getImageName();
                 String mask = label.replace(".jpg", ".png");
                 ossUtil.deleteImage(mask, masksDir);
                 ossUtil.deleteImage(label, labelsDir);
@@ -111,7 +99,7 @@ public class HistoryService {
 
             for (History history : histories) {
                 ids.add(history.getId());
-                String label = imageService.getImageById(history.getImageId()).getName();
+                String label = history.getImageName();
                 String mask = label.replace(".jpg", ".png");
                 masks.add(mask);
                 labels.add(label);
@@ -121,25 +109,6 @@ public class HistoryService {
             ossUtil.deleteImages(labels, labelsDir);
             historyRepository.deleteAllById(ids);
             return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean deleteHistoriesByImageId(int imageId) {
-        try {
-            History history = historyRepository.findByImageId(imageId);
-            if (history != null) {
-                OssUtil ossUtil = ossUtilManager.getOssUtil();
-                String label = imageService.getImageById(history.getImageId()).getName();
-                String mask = label.replace(".jpg", ".png");
-                ossUtil.deleteImage(mask, masksDir);
-                ossUtil.deleteImage(label, labelsDir);
-                historyRepository.deleteById(history.getId());
-                return true;
-            } else {
-                return false;
-            }
         } catch (Exception e) {
             return false;
         }
@@ -162,7 +131,7 @@ public class HistoryService {
 
     /**
      * 归档与取消归档历史记录
-     * 
+     *
      * @param id   历史记录ID
      * @param star 归档状态 0-未归档 1-已归档
      */
@@ -181,24 +150,12 @@ public class HistoryService {
         }
     }
 
-    public Map<String, Integer> countHistories() {
-        List<History> histories = historyRepository.findAll();
-        int total = histories.size();
-        // 统计histories中star为1的数量
-        int starred = 0;
-        for (History history : histories) {
-            if (history.getStar() == 1) {
-                starred++;
-            }
-        }
-        return Map.of("Total", total, "Starred", starred);
-    }
-
     public Map<String, Object> history2Map(History history) {
         return Map.of(
                 "UID", history.getUid(),
-                "Image ID", history.getImageId(),
+                "Image ID", history.getImageName(),
                 "Time", history.getTimestamp(),
-                "Caption", history.getCaption());
+                "Caption", history.getCaption(),
+                "Species", history.getSpecies());
     }
 }

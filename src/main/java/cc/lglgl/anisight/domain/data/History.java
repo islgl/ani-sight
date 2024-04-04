@@ -21,22 +21,26 @@ public class History {
     private int id;
     private int uid;
     private int star=0;
-    private int imageId;
+    private String imageName;
     private Timestamp timestamp;
     private String caption;
+    private String species;
 
 
-    public History(int uid, int imageId, Timestamp timestamp, String caption) {
+    public History(int uid, String imageName, Timestamp timestamp, String caption,String species) {
         this.uid = uid;
-        this.imageId = imageId;
+        this.imageName = imageName;
         this.timestamp = timestamp;
         this.caption = caption;
+        this.species=species;
+
     }
 
-    public History(int uid, int imageId, String caption) {
+    public History(int uid, String imageName, String caption,String species) {
         this.uid = uid;
-        this.imageId = imageId;
+        this.imageName = imageName;
         this.timestamp = new Timestamp(System.currentTimeMillis());
         this.caption = caption;
+        this.species=species;
     }
 }
