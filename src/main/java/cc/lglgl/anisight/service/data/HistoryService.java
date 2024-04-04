@@ -26,7 +26,7 @@ public class HistoryService {
     private final String labelsDir = "labels/";
 
     public HistoryService(HistoryRepository historyRepository, ImageService imageService,
-                          OssUtilManager ossUtilManager) {
+            OssUtilManager ossUtilManager) {
         this.historyRepository = historyRepository;
         this.imageService = imageService;
         this.ossUtilManager = ossUtilManager;
@@ -145,7 +145,7 @@ public class HistoryService {
         }
     }
 
-    public boolean starHistories(List<Integer> ids,int star) {
+    public boolean starHistories(List<Integer> ids, int star) {
         try {
             for (int id : ids) {
                 History history = historyRepository.findById(id).orElse(null);
@@ -160,6 +160,12 @@ public class HistoryService {
         }
     }
 
+    /**
+     * 归档与取消归档历史记录
+     * 
+     * @param id   历史记录ID
+     * @param star 归档状态 0-未归档 1-已归档
+     */
     public boolean starHistory(int id, int star) {
         try {
             History history = historyRepository.findById(id).orElse(null);
@@ -173,6 +179,19 @@ public class HistoryService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Map<String, Integer> countHistories() {
+        List<History> histories = historyRepository.findAll();
+        int total = histories.size();
+        // 统计histories中star为1的数量
+        int starred = 0;
+        for (History history : histories) {
+            if (history.getStar() == 1) {
+                starred++;
+            }
+        }
+        return Map.of("Total", total, "Starred", starred);
     }
 
     public Map<String, Object> history2Map(History history) {

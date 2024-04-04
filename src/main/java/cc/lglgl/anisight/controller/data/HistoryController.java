@@ -5,6 +5,8 @@ import cc.lglgl.anisight.dto.CustomResponse;
 import cc.lglgl.anisight.service.data.HistoryService;
 import cc.lglgl.anisight.service.data.ImageService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
+
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -104,12 +106,22 @@ public class HistoryController {
 
     @PutMapping("/{id}")
     public CustomResponse updateHistory(@PathVariable("id") int id,
-                                        @RequestParam("star") int star) {
+            @RequestParam("star") int star) {
         try {
             historyService.starHistory(id, star);
             return CustomResponseFactory.success("History updated");
         } catch (Exception e) {
             return CustomResponseFactory.error("Failed to update history");
+        }
+    }
+    
+    @GetMapping("/count")
+    public CustomResponse getHistoriesCount() {
+        try {
+            Map<String,Integer> count = historyService.countHistories();
+            return CustomResponseFactory.success("Histories count", count);
+        } catch (Exception e) {
+            return CustomResponseFactory.error("Failed to get histories count");
         }
     }
 
