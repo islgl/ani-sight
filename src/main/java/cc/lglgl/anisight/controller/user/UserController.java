@@ -150,7 +150,7 @@ public class UserController {
         if (password.length() < 6 || password.length() > 16) {
           return CustomResponseFactory.error("密码长度应在6-16位之间");
         }
-        user.setPassword(password);
+        user.setPassword(userService.encPassword(password));
       }
       if (userInfo.containsKey("email")) {
         if (userService.getUserByEmail(userInfo.get("email")) != null) {
@@ -203,7 +203,7 @@ public class UserController {
           if (value.length() < 6 || value.length() > 16) {
             return CustomResponseFactory.error("密码长度应在6-16位之间");
           }
-          user.setPassword(value);
+          user.setPassword(userService.encPassword(value));
           break;
         case "email":
           String verifyCode = data.get("verifyCode");

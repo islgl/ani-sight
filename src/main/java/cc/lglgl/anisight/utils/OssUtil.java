@@ -73,7 +73,7 @@ public class OssUtil {
      * 删除OSS上的图片
      *
      * @param filename 图片在OSS上的文件名
-     * @param dir      图片在OSS上的目录
+     * @param dir      图片在OSS上的目录, 以"/"结尾
      * @return 删除成功返回true，否则返回false
      */
     public boolean deleteImage(String filename, String dir) {

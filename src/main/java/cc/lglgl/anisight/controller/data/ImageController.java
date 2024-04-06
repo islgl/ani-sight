@@ -2,9 +2,11 @@ package cc.lglgl.anisight.controller.data;
 
 import cc.lglgl.anisight.domain.data.Image;
 import cc.lglgl.anisight.dto.CustomResponse;
+import cc.lglgl.anisight.manager.OssUtilManager;
 import cc.lglgl.anisight.service.data.ImageService;
 import cc.lglgl.anisight.utils.CustomResponseFactory;
 import cc.lglgl.anisight.utils.JwtUtil;
+import cc.lglgl.anisight.utils.OssUtil;
 import cc.lglgl.anisight.utils.StsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +29,9 @@ public class ImageController {
 
     @Autowired
     private StsUtil stsUtil;
+
+    @Autowired
+    private OssUtilManager ossUtilManager;
 
     public ImageController(ImageService imageService) {
         this.imageService = imageService;
@@ -51,6 +56,20 @@ public class ImageController {
         } else {
             String imagesNum = String.valueOf(images.size());
             return CustomResponseFactory.success(imagesNum + " images found", images);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public CustomResponse deleteImage(@PathVariable("id") int id) {
+        try {
+            String imageName=imageService.getImageById(id).getName();
+            imageService.deleteImage(id);
+            OssUtil ossUtil = ossUtilManager.getOssUtil();
+            ossUtil.deleteImage(imageName, "images/");
+            return CustomResponseFactory.success("Image deleted");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CustomResponseFactory.error("Failed to delete image");
         }
     }
 
